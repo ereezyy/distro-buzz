@@ -1,0 +1,47 @@
+{
+  "name": "maestro",
+  "version": "0.1.0",
+  "description": "An open-source autonomous music distribution platform that empowers independent musicians",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "author": "Maestro Contributors",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ereezyy/maestro.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ereezyy/maestro/issues"
+  },
+  "homepage": "https://github.com/ereezyy/maestro#readme",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "pnpm -r --parallel run dev",
+    "build": "pnpm -r run build",
+    "start": "pnpm -r run start",
+    "test": "pnpm -r run test",
+    "test:watch": "pnpm -r run test:watch",
+    "test:coverage": "pnpm -r run test:coverage",
+    "lint": "pnpm -r run lint",
+    "format": "pnpm -r run format",
+    "check": "pnpm -r run check",
+    "db:migrate": "pnpm -w --filter api run db:migrate",
+    "db:generate": "pnpm -w --filter api run db:generate",
+    "clean": "pnpm -r --parallel run clean && rm -rf node_modules",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f",
+    "docker:build": "docker-compose build"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "packageManager": "pnpm@8.0.0"
+}

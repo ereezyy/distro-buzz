@@ -1,0 +1,121 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:14-alpine
+    container_name: maestro-postgres
+    environment:
+      POSTGRES_DB: maestro
+      POSTGRES_USER: maestro
+      POSTGRES_PASSWORD: maestro_dev_password
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U maestro']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache & Queue
+  redis:
+    image: redis:7-alpine
+    container_name: maestro-redis
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # API Server
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: maestro-api
+    ports:
+      - '3000:3000'
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://maestro:maestro_dev_password@postgres:5432/maestro
+      REDIS_URL: redis://redis:6379
+      LOG_LEVEL: debug
+      PORT: 3000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./packages/api:/app/packages/api
+      - ./packages/shared:/app/packages/shared
+    command: npm run dev
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:3000/health']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Job Queue Worker
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: maestro-worker
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://maestro:maestro_dev_password@postgres:5432/maestro
+      REDIS_URL: redis://redis:6379
+      LOG_LEVEL: debug
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./packages/worker:/app/packages/worker
+      - ./packages/shared:/app/packages/shared
+    command: npm run worker
+    restart: unless-stopped
+
+  # Optional: pgAdmin for database management
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: maestro-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@maestro.local
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - '5050:80'
+    depends_on:
+      - postgres
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+
+  # Optional: Redis Commander for Redis management
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: maestro-redis-commander
+    environment:
+      REDIS_HOSTS: local:redis:6379
+    ports:
+      - '8081:8081'
+    depends_on:
+      - redis
+
+volumes:
+  postgres_data:
+  redis_data:
+  pgadmin_data:
+
+networks:
+  default:
+    name: maestro-network
