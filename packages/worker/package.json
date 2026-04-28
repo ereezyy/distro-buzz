@@ -1,7 +1,7 @@
 {
-  "name": "@maestro/worker",
+  "name": "@distro-buzz/worker",
   "version": "0.1.0",
-  "description": "Maestro job queue worker",
+  "description": "Distro Buzz job queue worker",
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
@@ -16,7 +16,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@maestro/shared": "workspace:*",
+    "@distro-buzz/shared": "workspace:*",
     "bull": "^4.11.0",
     "redis": "^4.6.0",
     "pg": "^8.10.0",

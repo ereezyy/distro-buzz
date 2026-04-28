@@ -1,6 +1,6 @@
-# Contributing to Maestro
+# Contributing to Distro Buzz
 
-Thank you for your interest in contributing to Maestro! We're excited to have you join our mission to empower independent musicians.
+Thank you for your interest in contributing to Distro Buzz! We're excited to have you join our mission to empower independent musicians.
 
 This document provides guidelines and instructions for contributing to the project.
 
@@ -89,8 +89,8 @@ Feature suggestions are welcome! Before proposing a feature, check if it's alrea
 
 ```bash
 # 1. Clone your fork
-git clone https://github.com/YOUR_USERNAME/maestro.git
-cd maestro
+git clone https://github.com/YOUR_USERNAME/distro-buzz.git
+cd distro-buzz
 
 # 2. Install dependencies
 pnpm install
@@ -142,7 +142,7 @@ docker-compose logs   # View service logs
 ## Project Structure
 
 ```
-maestro/
+distro-buzz/
 ├── packages/
 │   ├── api/           # Express API server
 │   ├── worker/        # Job queue worker
@@ -518,4 +518,4 @@ Don't hesitate to ask! We're here to help. Open an issue or start a discussion.
 
 ---
 
-**Thank you for contributing to Maestro! Together, we're building the future of music distribution.**
+**Thank you for contributing to Distro Buzz! Together, we're building the future of music distribution.**

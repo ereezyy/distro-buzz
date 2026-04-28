@@ -1,19 +1,19 @@
 {
-  "name": "maestro",
+  "name": "distro-buzz",
   "version": "0.1.0",
   "description": "An open-source autonomous music distribution platform that empowers independent musicians",
   "private": true,
   "type": "module",
   "license": "MIT",
-  "author": "Maestro Contributors",
+  "author": "Distro Buzz Contributors",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ereezyy/maestro.git"
+    "url": "https://github.com/ereezyy/distro-buzz.git"
   },
   "bugs": {
-    "url": "https://github.com/ereezyy/maestro/issues"
+    "url": "https://github.com/ereezyy/distro-buzz/issues"
   },
-  "homepage": "https://github.com/ereezyy/maestro#readme",
+  "homepage": "https://github.com/ereezyy/distro-buzz#readme",
   "workspaces": [
     "packages/*"
   ],

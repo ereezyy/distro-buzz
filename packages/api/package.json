@@ -1,7 +1,7 @@
 {
-  "name": "@maestro/api",
+  "name": "@distro-buzz/api",
   "version": "0.1.0",
-  "description": "Maestro API server",
+  "description": "Distro Buzz API server",
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
@@ -16,7 +16,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@maestro/shared": "workspace:*",
+    "@distro-buzz/shared": "workspace:*",
     "express": "^4.18.0",
     "cors": "^2.8.5",
     "dotenv": "^16.0.0",

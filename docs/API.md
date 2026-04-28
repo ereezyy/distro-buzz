@@ -1,6 +1,6 @@
-# Maestro API Reference
+# Distro Buzz API Reference
 
-Complete API documentation for Maestro's REST and tRPC endpoints.
+Complete API documentation for Distro Buzz's REST and tRPC endpoints.
 
 ## Base URL
 
@@ -38,7 +38,7 @@ Clears session cookie.
 
 ## tRPC Procedures
 
-Maestro uses tRPC for type-safe client-server communication. All procedures are accessed via `/api/trpc`.
+Distro Buzz uses tRPC for type-safe client-server communication. All procedures are accessed via `/api/trpc`.
 
 ### Authentication
 
@@ -543,5 +543,5 @@ API is currently at v1. Future versions will be indicated by `/api/v2/`, etc.
 ## Support
 
 For API issues or questions:
-- [GitHub Issues](https://github.com/ereezyy/maestro/issues)
-- [GitHub Discussions](https://github.com/ereezyy/maestro/discussions)
+- [GitHub Issues](https://github.com/ereezyy/distro-buzz/issues)
+- [GitHub Discussions](https://github.com/ereezyy/distro-buzz/discussions)

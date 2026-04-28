@@ -1,4 +1,4 @@
-# 🎵 Maestro: Omnipresent Music Distribution
+# ⚡ Distro Buzz: Omnipresent Music Distribution
 
 > **One track. Infinite reach. Everywhere.**
 >
@@ -14,7 +14,7 @@
 
 ## 🎯 Mission
 
-**Maestro** disrupts the music industry's exploitation of independent artists. We believe every musician deserves:
+**Distro Buzz** disrupts the music industry's exploitation of independent artists. We believe every musician deserves:
 
 - **Global reach** without paying gatekeepers
 - **Full transparency** into where their music lives
@@ -192,8 +192,8 @@ Artist receives notification: "Your track is live on 7 platforms!"
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/ereezyy/maestro.git
-cd maestro
+git clone https://github.com/ereezyy/distro-buzz.git
+cd distro-buzz
 
 # 2. Install dependencies
 pnpm install
@@ -221,8 +221,8 @@ services:
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_DB: maestro
-      POSTGRES_PASSWORD: maestro_dev
+      POSTGRES_DB: distro-buzz
+      POSTGRES_PASSWORD: distro-buzz_dev
 
   redis:
     image: redis:7
@@ -237,7 +237,7 @@ services:
       - postgres
       - redis
     environment:
-      DATABASE_URL: postgresql://postgres:maestro_dev@postgres:5432/maestro
+      DATABASE_URL: postgresql://postgres:distro-buzz_dev@postgres:5432/distro-buzz
       REDIS_URL: redis://redis:6379
 
   worker:
@@ -247,7 +247,7 @@ services:
       - postgres
       - redis
     environment:
-      DATABASE_URL: postgresql://postgres:maestro_dev@postgres:5432/maestro
+      DATABASE_URL: postgresql://postgres:distro-buzz_dev@postgres:5432/distro-buzz
       REDIS_URL: redis://redis:6379
 ```
 
@@ -256,7 +256,7 @@ services:
 ## 📁 Project Structure
 
 ```
-maestro/
+distro-buzz/
 ├── docs/                          # Documentation
 │   ├── ARCHITECTURE.md            # Full system design
 │   ├── API.md                     # API reference
@@ -362,7 +362,7 @@ maestro/
 
 ```bash
 # Database
-DATABASE_URL=postgresql://user:password@localhost:5432/maestro
+DATABASE_URL=postgresql://user:password@localhost:5432/distro-buzz
 
 # Redis
 REDIS_URL=redis://localhost:6379
@@ -475,15 +475,15 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md) for detailed guidelines.
 
 ## 📜 License
 
-Maestro is licensed under the **MIT License**. See [LICENSE](./LICENSE) for details.
+Distro Buzz is licensed under the **MIT License**. See [LICENSE](./LICENSE) for details.
 
-This means you can use, modify, and distribute Maestro freely, even for commercial purposes, as long as you include the license notice.
+This means you can use, modify, and distribute Distro Buzz freely, even for commercial purposes, as long as you include the license notice.
 
 ---
 
 ## 🛡️ Security
 
-We take security seriously. If you discover a security vulnerability, please email **security@maestro.local** instead of using the public issue tracker.
+We take security seriously. If you discover a security vulnerability, please email **security@distro-buzz.local** instead of using the public issue tracker.
 
 ### Security Best Practices
 
@@ -502,8 +502,8 @@ See [SECURITY.md](./docs/SECURITY.md) for more details.
 
 - **GitHub Issues**: Bug reports and feature requests
 - **GitHub Discussions**: Questions and community support
-- **Discord Server**: [Join our community](https://discord.gg/maestro) (coming soon)
-- **Twitter**: [@MaestroMusic](https://twitter.com/maestromusic) (coming soon)
+- **Discord Server**: [Join our community](https://discord.gg/distro-buzz) (coming soon)
+- **Twitter**: [@DistroBuzz](https://twitter.com/distrobuzz) (coming soon)
 
 ---
 
@@ -519,7 +519,7 @@ See [SECURITY.md](./docs/SECURITY.md) for more details.
 
 ## 🙏 Acknowledgments
 
-Maestro is built with love for independent musicians. We're inspired by the open-source community and the artists fighting for their freedom.
+Distro Buzz is built with love for independent musicians. We're inspired by the open-source community and the artists fighting for their freedom.
 
 Special thanks to:
 - The Node.js and TypeScript communities
@@ -531,15 +531,15 @@ Special thanks to:
 ## 📞 Support
 
 - **Documentation**: [docs/](./docs/)
-- **GitHub Issues**: [Report a bug](https://github.com/ereezyy/maestro/issues)
-- **GitHub Discussions**: [Ask a question](https://github.com/ereezyy/maestro/discussions)
-- **Email**: support@maestro.local (coming soon)
+- **GitHub Issues**: [Report a bug](https://github.com/ereezyy/distro-buzz/issues)
+- **GitHub Discussions**: [Ask a question](https://github.com/ereezyy/distro-buzz/discussions)
+- **Email**: support@distro-buzz.local (coming soon)
 
 ---
 
 ## 🚀 Let's Build the Future of Music
 
-**Maestro** is more than a tool—it's a movement. We're giving power back to artists, one track at a time.
+**Distro Buzz** is more than a tool—it's a movement. We're giving power back to artists, one track at a time.
 
 If you believe independent musicians deserve better, join us. Contribute code, ideas, or just spread the word.
 
@@ -547,6 +547,6 @@ If you believe independent musicians deserve better, join us. Contribute code, i
 
 ---
 
-**Made with ❤️ by the Maestro community**
+**Made with ❤️ by the Distro Buzz community**
 
 *One track. Infinite reach. Everywhere.*

@@ -1,6 +1,6 @@
-# Maestro Architecture Documentation
+# Distro Buzz Architecture Documentation
 
-This document provides a comprehensive overview of Maestro's system architecture, design decisions, and implementation details.
+This document provides a comprehensive overview of Distro Buzz's system architecture, design decisions, and implementation details.
 
 ## Quick Links
 
@@ -12,7 +12,7 @@ This document provides a comprehensive overview of Maestro's system architecture
 
 ## Architecture Overview
 
-Maestro is built as a distributed system with the following core components:
+Distro Buzz is built as a distributed system with the following core components:
 
 ### Services
 
@@ -125,6 +125,6 @@ See [CONTRIBUTING.md](../CONTRIBUTING.md) for:
 
 ## Support
 
-- **Issues**: [GitHub Issues](https://github.com/ereezyy/maestro/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/ereezyy/maestro/discussions)
+- **Issues**: [GitHub Issues](https://github.com/ereezyy/distro-buzz/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/ereezyy/distro-buzz/discussions)
 - **Documentation**: [docs/](.)

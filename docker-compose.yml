@@ -4,17 +4,17 @@ services:
   # PostgreSQL Database
   postgres:
     image: postgres:14-alpine
-    container_name: maestro-postgres
+    container_name: distro-buzz-postgres
     environment:
-      POSTGRES_DB: maestro
-      POSTGRES_USER: maestro
-      POSTGRES_PASSWORD: maestro_dev_password
+      POSTGRES_DB: distro-buzz
+      POSTGRES_USER: distro-buzz
+      POSTGRES_PASSWORD: distro-buzz_dev_password
     ports:
       - '5432:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U maestro']
+      test: ['CMD-SHELL', 'pg_isready -U distro-buzz']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -22,7 +22,7 @@ services:
   # Redis Cache & Queue
   redis:
     image: redis:7-alpine
-    container_name: maestro-redis
+    container_name: distro-buzz-redis
     ports:
       - '6379:6379'
     volumes:
@@ -39,12 +39,12 @@ services:
       context: .
       dockerfile: Dockerfile
       target: development
-    container_name: maestro-api
+    container_name: distro-buzz-api
     ports:
       - '3000:3000'
     environment:
       NODE_ENV: development
-      DATABASE_URL: postgresql://maestro:maestro_dev_password@postgres:5432/maestro
+      DATABASE_URL: postgresql://distro-buzz:distro-buzz_dev_password@postgres:5432/distro-buzz
       REDIS_URL: redis://redis:6379
       LOG_LEVEL: debug
       PORT: 3000
@@ -69,10 +69,10 @@ services:
       context: .
       dockerfile: Dockerfile
       target: development
-    container_name: maestro-worker
+    container_name: distro-buzz-worker
     environment:
       NODE_ENV: development
-      DATABASE_URL: postgresql://maestro:maestro_dev_password@postgres:5432/maestro
+      DATABASE_URL: postgresql://distro-buzz:distro-buzz_dev_password@postgres:5432/distro-buzz
       REDIS_URL: redis://redis:6379
       LOG_LEVEL: debug
     depends_on:
@@ -89,9 +89,9 @@ services:
   # Optional: pgAdmin for database management
   pgadmin:
     image: dpage/pgadmin4:latest
-    container_name: maestro-pgadmin
+    container_name: distro-buzz-pgadmin
     environment:
-      PGADMIN_DEFAULT_EMAIL: admin@maestro.local
+      PGADMIN_DEFAULT_EMAIL: admin@distro-buzz.local
       PGADMIN_DEFAULT_PASSWORD: admin
     ports:
       - '5050:80'
@@ -103,7 +103,7 @@ services:
   # Optional: Redis Commander for Redis management
   redis-commander:
     image: rediscommander/redis-commander:latest
-    container_name: maestro-redis-commander
+    container_name: distro-buzz-redis-commander
     environment:
       REDIS_HOSTS: local:redis:6379
     ports:
@@ -118,4 +118,4 @@ volumes:
 
 networks:
   default:
-    name: maestro-network
+    name: distro-buzz-network

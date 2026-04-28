@@ -1,4 +1,4 @@
-# Multi-stage build for Maestro
+# Multi-stage build for Distro Buzz
 
 # Stage 1: Development
 FROM node:18-alpine AS development

@@ -1,7 +1,7 @@
 {
-  "name": "@maestro/web",
+  "name": "@distro-buzz/web",
   "version": "0.1.0",
-  "description": "Maestro web frontend",
+  "description": "Distro Buzz web frontend",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -15,7 +15,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@maestro/shared": "workspace:*",
+    "@distro-buzz/shared": "workspace:*",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "axios": "^1.4.0",

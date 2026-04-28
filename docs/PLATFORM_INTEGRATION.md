@@ -1,6 +1,6 @@
 # Platform Integration Guide
 
-This guide explains how to add support for new music distribution platforms in Maestro.
+This guide explains how to add support for new music distribution platforms in Distro Buzz.
 
 ## Platform Categories
 
@@ -463,6 +463,6 @@ Tracks appear live at different times:
 ## Support
 
 For questions about platform integration:
-- [GitHub Issues](https://github.com/ereezyy/maestro/issues)
-- [GitHub Discussions](https://github.com/ereezyy/maestro/discussions)
+- [GitHub Issues](https://github.com/ereezyy/distro-buzz/issues)
+- [GitHub Discussions](https://github.com/ereezyy/distro-buzz/discussions)
 - Check existing adapters for examples
