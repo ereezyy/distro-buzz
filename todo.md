@@ -3,7 +3,7 @@
 ## Rebrand
 - [x] Rebrand project name from Maestro to Distro Buzz in all files
 - [x] Update VITE_APP_TITLE to Distro Buzz (user must update in Settings > Secrets)
-- [ ] Rename GitHub repo to distro-buzz (deferred — requires manual GitHub action)
+- [x] Rename GitHub repo to distro-buzz (done: ereezyy/distro-buzz)
 
 ## Database & Schema
 - [x] Create core database tables (artists, tracks, distributionJobs, distributionLogs, platformRegistry, aggregatorAccounts, musicVideoJobs, socialMediaPosts, distributionAnalytics)
