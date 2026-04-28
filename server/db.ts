@@ -30,6 +30,12 @@ import {
   InsertMusicVideoJob,
   InsertSocialMediaPost,
   InsertDistributionAnalytic,
+  adPlacements,
+  adEvents,
+  AdPlacement,
+  AdEvent,
+  InsertAdPlacement,
+  InsertAdEvent,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -485,4 +491,122 @@ export async function getMusicVideoJobsByTrackId(
     .select()
     .from(musicVideoJobs)
     .where(eq(musicVideoJobs.trackId, trackId));
+}
+
+// ============================================================================
+// AD PLACEMENT QUERIES
+// ============================================================================
+
+export async function getActiveAds(
+  position?: string,
+  limit: number = 10
+): Promise<AdPlacement[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  let query = db
+    .select()
+    .from(adPlacements)
+    .where(eq(adPlacements.status, "active"))
+    .limit(limit);
+
+  if (position) {
+    query = db
+      .select()
+      .from(adPlacements)
+      .where(
+        and(
+          eq(adPlacements.status, "active"),
+          eq(adPlacements.position, position as any)
+        )
+      )
+      .limit(limit);
+  }
+
+  return query;
+}
+
+export async function getAdsByAdvertiser(
+  advertiserId: string
+): Promise<AdPlacement[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db
+    .select()
+    .from(adPlacements)
+    .where(eq(adPlacements.advertiserId, advertiserId));
+}
+
+export async function createAd(
+  data: Partial<InsertAdPlacement> & { id: string; advertiserId: string; title: string; position: any }
+): Promise<AdPlacement | null> {
+  const db = await getDb();
+  if (!db) return null;
+
+  await db.insert(adPlacements).values(data as InsertAdPlacement);
+  const result = await db
+    .select()
+    .from(adPlacements)
+    .where(eq(adPlacements.id, data.id))
+    .limit(1);
+  return result[0] ?? null;
+}
+
+export async function updateAdStatus(
+  id: string,
+  status: "active" | "paused"
+): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+
+  await db
+    .update(adPlacements)
+    .set({ status })
+    .where(eq(adPlacements.id, id));
+}
+
+export async function trackAdEvent(data: {
+  id: string;
+  adId: string;
+  eventType: "impression" | "click";
+}): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+
+  await db.insert(adEvents).values(data as InsertAdEvent);
+
+  // Update counters on the ad placement
+  if (data.eventType === "impression") {
+    await db.execute(
+      sql`UPDATE adPlacements SET impressions = impressions + 1 WHERE id = ${data.adId}`
+    );
+  } else if (data.eventType === "click") {
+    await db.execute(
+      sql`UPDATE adPlacements SET clicks = clicks + 1, spentCents = spentCents + cpcCents WHERE id = ${data.adId}`
+    );
+  }
+}
+
+export async function getAdStats(adId: string): Promise<{
+  ad: AdPlacement | null;
+  totalImpressions: number;
+  totalClicks: number;
+  ctr: number;
+}> {
+  const db = await getDb();
+  if (!db) return { ad: null, totalImpressions: 0, totalClicks: 0, ctr: 0 };
+
+  const adResult = await db
+    .select()
+    .from(adPlacements)
+    .where(eq(adPlacements.id, adId))
+    .limit(1);
+  const ad = adResult[0] ?? null;
+
+  const impressions = ad?.impressions ?? 0;
+  const clicks = ad?.clicks ?? 0;
+  const ctr = impressions > 0 ? (clicks / impressions) * 100 : 0;
+
+  return { ad, totalImpressions: impressions, totalClicks: clicks, ctr };
 }

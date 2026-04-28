@@ -559,6 +559,80 @@ const aggregatorsRouter = router({
 });
 
 // ============================================================================
+// ADS ROUTER
+// ============================================================================
+
+const adsRouter = router({
+  list: publicProcedure
+    .input(z.object({ position: z.string().optional(), limit: z.number().optional() }).optional())
+    .query(async ({ input }) => {
+      return db.getActiveAds(input?.position, input?.limit ?? 10);
+    }),
+
+  myAds: protectedProcedure.query(async ({ ctx }) => {
+    return db.getAdsByAdvertiser(String(ctx.user.id));
+  }),
+
+  create: protectedProcedure
+    .input(z.object({
+      title: z.string().min(1),
+      description: z.string().optional(),
+      imageUrl: z.string().optional(),
+      linkUrl: z.string().optional(),
+      position: z.enum(["homepage_banner", "featured_artist", "sponsored_recommendation", "sidebar_banner", "feed_inline"]),
+      budgetCents: z.number().int().min(100),
+      cpcCents: z.number().int().min(1).optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const id = uuidv4();
+      await db.createAd({
+        id,
+        advertiserId: String(ctx.user.id),
+        title: input.title,
+        description: input.description,
+        imageUrl: input.imageUrl,
+        linkUrl: input.linkUrl,
+        position: input.position,
+        budgetCents: input.budgetCents,
+        cpcCents: input.cpcCents ?? 10,
+        status: "draft",
+      });
+      return { success: true, id };
+    }),
+
+  updateStatus: protectedProcedure
+    .input(z.object({
+      id: z.string(),
+      status: z.enum(["active", "paused"]),
+    }))
+    .mutation(async ({ input }) => {
+      await db.updateAdStatus(input.id, input.status);
+      return { success: true };
+    }),
+
+  trackEvent: publicProcedure
+    .input(z.object({
+      adId: z.string(),
+      eventType: z.enum(["impression", "click"]),
+    }))
+    .mutation(async ({ input }) => {
+      const id = uuidv4();
+      await db.trackAdEvent({
+        id,
+        adId: input.adId,
+        eventType: input.eventType,
+      });
+      return { success: true };
+    }),
+
+  stats: protectedProcedure
+    .input(z.object({ adId: z.string() }))
+    .query(async ({ input }) => {
+      return db.getAdStats(input.adId);
+    }),
+});
+
+// ============================================================================
 // MAIN ROUTER
 // ============================================================================
 
@@ -584,6 +658,7 @@ export const appRouter = router({
   admin: adminRouter,
   customAuth: customAuthRouter,
   aggregators: aggregatorsRouter,
+  ads: adsRouter,
 });
 
 export type AppRouter = typeof appRouter;

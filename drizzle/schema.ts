@@ -320,3 +320,68 @@ export const distributionAnalytics = mysqlTable(
 
 export type DistributionAnalytic = typeof distributionAnalytics.$inferSelect;
 export type InsertDistributionAnalytic = typeof distributionAnalytics.$inferInsert;
+
+/**
+ * Ad Placements (non-intrusive ad spots throughout the platform)
+ */
+export const adPlacements = mysqlTable(
+  "adPlacements",
+  {
+    id: varchar("id", { length: 36 }).primaryKey(),
+    advertiserId: varchar("advertiserId", { length: 36 }).notNull(), // artist or business ID
+    title: varchar("title", { length: 255 }).notNull(),
+    description: text("description"),
+    imageUrl: text("imageUrl"),
+    linkUrl: text("linkUrl"),
+    position: mysqlEnum("position", [
+      "homepage_banner",
+      "featured_artist",
+      "sponsored_recommendation",
+      "sidebar_banner",
+      "feed_inline",
+    ]).notNull(),
+    status: mysqlEnum("status", ["draft", "active", "paused", "expired", "rejected"])
+      .default("draft")
+      .notNull(),
+    budgetCents: int("budgetCents").default(0), // total budget in cents
+    spentCents: int("spentCents").default(0), // total spent in cents
+    cpcCents: int("cpcCents").default(10), // cost per click in cents
+    impressions: int("impressions").default(0),
+    clicks: int("clicks").default(0),
+    startDate: timestamp("startDate"),
+    endDate: timestamp("endDate"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  (table) => ({
+    advertiserIdIdx: index("adPlacements_advertiserId_idx").on(table.advertiserId),
+    statusIdx: index("adPlacements_status_idx").on(table.status),
+    positionIdx: index("adPlacements_position_idx").on(table.position),
+  })
+);
+
+export type AdPlacement = typeof adPlacements.$inferSelect;
+export type InsertAdPlacement = typeof adPlacements.$inferInsert;
+
+/**
+ * Ad Events (impression and click tracking)
+ */
+export const adEvents = mysqlTable(
+  "adEvents",
+  {
+    id: varchar("id", { length: 36 }).primaryKey(),
+    adId: varchar("adId", { length: 36 }).notNull(),
+    eventType: mysqlEnum("eventType", ["impression", "click"]).notNull(),
+    ipHash: varchar("ipHash", { length: 64 }), // hashed IP for dedup
+    userAgent: text("userAgent"),
+    referrer: text("referrer"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  (table) => ({
+    adIdIdx: index("adEvents_adId_idx").on(table.adId),
+    eventTypeIdx: index("adEvents_eventType_idx").on(table.eventType),
+  })
+);
+
+export type AdEvent = typeof adEvents.$inferSelect;
+export type InsertAdEvent = typeof adEvents.$inferInsert;

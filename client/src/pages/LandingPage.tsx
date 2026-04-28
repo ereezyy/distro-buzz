@@ -394,6 +394,7 @@ export default function LandingPage() {
                   ))}
                 </ul>
                 <Button
+                  onClick={() => setLocation("/pricing")}
                   className={`w-full ${
                     tier.featured
                       ? "bg-neon-green text-black hover:bg-neon-green/90"
