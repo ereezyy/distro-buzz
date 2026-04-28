@@ -10,6 +10,9 @@ import TrackLibrary from "./pages/TrackLibrary";
 import PlatformRegistry from "./pages/PlatformRegistry";
 import JobLogs from "./pages/JobLogs";
 import Onboarding from "./pages/Onboarding";
+import Analytics from "./pages/Analytics";
+import Admin from "./pages/Admin";
+import Aggregators from "./pages/Aggregators";
 
 function Router() {
   return (
@@ -20,6 +23,9 @@ function Router() {
       <Route path={"/platforms"} component={PlatformRegistry} />
       <Route path={"/logs/:jobId?"} component={JobLogs} />
       <Route path={"/onboarding"} component={Onboarding} />
+      <Route path={"/analytics"} component={Analytics} />
+      <Route path={"/admin"} component={Admin} />
+      <Route path={"/aggregators"} component={Aggregators} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>

@@ -321,6 +321,159 @@ const platformsRouter = router({
 });
 
 // ============================================================================
+// ANALYTICS ROUTER
+// ============================================================================
+
+const analyticsRouter = router({
+  overview: protectedProcedure.query(async ({ ctx }) => {
+    if (!ctx.user) throw new Error("Not authenticated");
+
+    const artist = await db.getArtistByUserId(ctx.user.id);
+    if (!artist) return { totalTracks: 0, totalJobs: 0, platformCoverage: {}, recentActivity: [] };
+
+    const allTracks = await db.getTracksByArtistId(artist.id, 1000, 0);
+    const platforms = await db.getPlatformRegistry();
+
+    // Count jobs by status across all tracks
+    let totalJobs = 0;
+    let liveJobs = 0;
+    let failedJobs = 0;
+    let processingJobs = 0;
+    const platformCoverage: Record<string, { live: number; total: number }> = {};
+
+    for (const track of allTracks) {
+      const jobs = await db.getDistributionJobsByTrackId(track.id);
+      totalJobs += jobs.length;
+
+      for (const job of jobs) {
+        if (job.status === "live" || (job.status as string) === "success") liveJobs++;
+        else if (job.status === "failed") failedJobs++;
+        else processingJobs++;
+
+        if (!platformCoverage[job.platformId]) {
+          platformCoverage[job.platformId] = { live: 0, total: 0 };
+        }
+        platformCoverage[job.platformId].total++;
+        if (job.status === "live" || (job.status as string) === "success") {
+          platformCoverage[job.platformId].live++;
+        }
+      }
+    }
+
+    // Platform failure rates
+    const platformStats = Object.entries(platformCoverage).map(([id, stats]) => {
+      const platform = platforms.find((p) => p.id === id);
+      return {
+        platformId: id,
+        platformName: platform?.name || id,
+        liveCount: stats.live,
+        totalCount: stats.total,
+        successRate: stats.total > 0 ? Math.round((stats.live / stats.total) * 100) : 0,
+      };
+    });
+
+    return {
+      totalTracks: allTracks.length,
+      totalJobs,
+      liveJobs,
+      failedJobs,
+      processingJobs,
+      healthScore: totalJobs > 0 ? Math.round((liveJobs / totalJobs) * 100) : 100,
+      platformStats,
+      totalPlatforms: platforms.length,
+    };
+  }),
+});
+
+// ============================================================================
+// ADMIN ROUTER (owner-only)
+// ============================================================================
+
+const adminRouter = router({
+  stats: protectedProcedure.query(async ({ ctx }) => {
+    if (!ctx.user || ctx.user.role !== "admin") throw new Error("Forbidden");
+
+    const platforms = await db.getPlatformRegistry();
+    const queuedJobs = await db.getDistributionJobsByStatus("queued", 500);
+    const processingJobs = await db.getDistributionJobsByStatus("processing", 500);
+    const failedJobs = await db.getDistributionJobsByStatus("failed", 500);
+    const retryingJobs = await db.getDistributionJobsByStatus("retrying", 500);
+
+    const healthyPlatforms = platforms.filter((p) => p.healthStatus === "healthy").length;
+    const degradedPlatforms = platforms.filter((p) => p.healthStatus === "degraded").length;
+    const downPlatforms = platforms.filter((p) => p.healthStatus === "down").length;
+
+    return {
+      queue: {
+        queued: queuedJobs.length,
+        processing: processingJobs.length,
+        failed: failedJobs.length,
+        retrying: retryingJobs.length,
+        total: queuedJobs.length + processingJobs.length + failedJobs.length + retryingJobs.length,
+      },
+      platforms: {
+        total: platforms.length,
+        healthy: healthyPlatforms,
+        degraded: degradedPlatforms,
+        down: downPlatforms,
+      },
+      recentFailedJobs: failedJobs.slice(0, 20),
+      recentQueuedJobs: queuedJobs.slice(0, 20),
+    };
+  }),
+
+  allJobs: protectedProcedure
+    .input(
+      z.object({
+        status: z.string().optional(),
+        limit: z.number().default(100),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      if (!ctx.user || ctx.user.role !== "admin") throw new Error("Forbidden");
+
+      if (input.status) {
+        const jobs = await db.getDistributionJobsByStatus(input.status, input.limit);
+        return { jobs, total: jobs.length };
+      }
+
+      // Get all active jobs
+      const queued = await db.getDistributionJobsByStatus("queued", input.limit);
+      const processing = await db.getDistributionJobsByStatus("processing", input.limit);
+      const retrying = await db.getDistributionJobsByStatus("retrying", input.limit);
+      const jobs = [...queued, ...processing, ...retrying];
+
+      return { jobs, total: jobs.length };
+    }),
+
+  triggerJob: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      if (!ctx.user || ctx.user.role !== "admin") throw new Error("Forbidden");
+
+      const updated = await db.updateDistributionJob(input.id, {
+        status: "queued",
+        nextRetryAt: new Date(),
+      });
+
+      return { success: !!updated, job: updated };
+    }),
+
+  pauseJob: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      if (!ctx.user || ctx.user.role !== "admin") throw new Error("Forbidden");
+
+      const updated = await db.updateDistributionJob(input.id, {
+        status: "failed",
+        errorMessage: "Paused by admin",
+      });
+
+      return { success: !!updated, job: updated };
+    }),
+});
+
+// ============================================================================
 // MAIN ROUTER
 // ============================================================================
 
@@ -342,6 +495,8 @@ export const appRouter = router({
   jobs: jobsRouter,
   logs: logsRouter,
   platforms: platformsRouter,
+  analytics: analyticsRouter,
+  admin: adminRouter,
 });
 
 export type AppRouter = typeof appRouter;

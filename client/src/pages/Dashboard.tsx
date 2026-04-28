@@ -57,9 +57,9 @@ function DashboardContent() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
 
-  const artistQuery = trpc.artists.me.useQuery();
-  const platformsQuery = trpc.platforms.list.useQuery();
-  const healthQuery = trpc.platforms.health.useQuery();
+  const artistQuery = trpc.artists.me.useQuery(undefined, { refetchInterval: 15000 });
+  const platformsQuery = trpc.platforms.list.useQuery(undefined, { refetchInterval: 15000 });
+  const healthQuery = trpc.platforms.health.useQuery(undefined, { refetchInterval: 10000 });
 
   const artist = artistQuery.data;
   const platforms = platformsQuery.data?.platforms || [];

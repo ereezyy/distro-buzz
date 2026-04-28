@@ -16,7 +16,7 @@ import { toast } from "sonner";
 function TrackLibraryContent() {
   const [page] = useState(1);
 
-  const tracksQuery = trpc.tracks.list.useQuery({ page, limit: 20 });
+  const tracksQuery = trpc.tracks.list.useQuery({ page, limit: 20 }, { refetchInterval: 15000 });
   const distributeMutation = trpc.tracks.distribute.useMutation({
     onSuccess: (data) => {
       toast.success(data.message);

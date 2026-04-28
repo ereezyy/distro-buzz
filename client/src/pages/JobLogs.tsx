@@ -63,7 +63,7 @@ function JobLogsContent() {
   const jobsQuery = trpc.jobs.list.useQuery({
     page: 1,
     limit: 50,
-  });
+  }, { refetchInterval: 10000 });
 
   const retryMutation = trpc.jobs.retry.useMutation({
     onSuccess: () => {

@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/sidebar";
 import { getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
-import { LayoutDashboard, LogOut, PanelLeft, Music2, Radio, FileText, Zap } from "lucide-react";
+import { LayoutDashboard, LogOut, PanelLeft, Music2, Radio, FileText, Zap, BarChart3, Shield, Plug } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
@@ -32,6 +32,9 @@ const menuItems = [
   { icon: Music2, label: "Track Library", path: "/tracks" },
   { icon: Radio, label: "Platforms", path: "/platforms" },
   { icon: FileText, label: "Job Logs", path: "/logs" },
+  { icon: BarChart3, label: "Analytics", path: "/analytics" },
+  { icon: Shield, label: "Admin Panel", path: "/admin" },
+  { icon: Plug, label: "Aggregators", path: "/aggregators" },
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";

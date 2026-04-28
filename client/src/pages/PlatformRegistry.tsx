@@ -14,8 +14,8 @@ import {
 } from "lucide-react";
 
 function PlatformRegistryContent() {
-  const platformsQuery = trpc.platforms.list.useQuery();
-  const healthMutation = trpc.platforms.health.useQuery();
+  const platformsQuery = trpc.platforms.list.useQuery(undefined, { refetchInterval: 15000 });
+  const healthMutation = trpc.platforms.health.useQuery(undefined, { refetchInterval: 10000 });
 
   const platforms = platformsQuery.data?.platforms || [];
 

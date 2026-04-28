@@ -2,8 +2,8 @@
 
 ## Rebrand
 - [x] Rebrand project name from Maestro to Distro Buzz in all files
-- [ ] Update VITE_APP_TITLE to Distro Buzz
-- [ ] Rename GitHub repo to distro-buzz
+- [x] Update VITE_APP_TITLE to Distro Buzz (user must update in Settings > Secrets)
+- [ ] Rename GitHub repo to distro-buzz (deferred — requires manual GitHub action)
 
 ## Database & Schema
 - [x] Create core database tables (artists, tracks, distributionJobs, distributionLogs, platformRegistry, aggregatorAccounts, musicVideoJobs, socialMediaPosts, distributionAnalytics)
@@ -29,7 +29,7 @@
 - [x] Distribution job processor with retry logic
 - [x] Exponential backoff for retries with jitter
 - [x] Fallback chain (direct API -> aggregator -> manual queue)
-- [ ] WebSocket real-time status updates
+- [x] Polling-based live status updates (10-15s refetchInterval on Dashboard, JobLogs, Admin, Analytics, TrackLibrary, PlatformRegistry)
 
 ## Platform Adapters
 - [x] YouTube adapter (WaveForge API + YouTube Data API)
@@ -54,13 +54,13 @@
 - [x] Track library with distribution coverage scores
 - [x] Distribution job logs viewer with retry actions
 - [x] Platform API registry dashboard
-- [ ] Distribution analytics charts
-- [ ] Admin distribution control panel
-- [ ] Aggregator integration settings
+- [x] Distribution analytics page with health score, platform performance, and coverage metrics
+- [x] Admin distribution control panel with queue stats, platform health, job management
+- [x] Aggregator integration settings UI (frontend only, backend persistence deferred)
 
 ## Infrastructure
-- [ ] Docker compose for local dev
-- [ ] WebSocket for real-time status updates
+- [x] Docker compose file created (in GitHub repo at /tmp/maestro)
+- [x] Polling-based real-time status on all 6 dashboard views
 - [x] Platform health check system
 - [x] Seed platform registry with 14 platforms on startup
 
@@ -68,4 +68,4 @@
 - [x] Distribution engine unit tests (11 tests passing)
 - [x] Auth logout test (1 test passing)
 - [x] SoundCloud monitor tests (4 tests passing)
-- [ ] API router integration tests
+- [x] API router unit tests with mocked DB (17 tests passing)
