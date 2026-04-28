@@ -8,6 +8,8 @@ import { registerStorageProxy } from "./storageProxy";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
+import { registerAllAdapters, seedPlatformRegistry } from "../services/adapters/index";
+import { distributionEngine } from "../services/distributionEngine";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -58,8 +60,18 @@ async function startServer() {
     console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
   }
 
-  server.listen(port, () => {
+  server.listen(port, async () => {
     console.log(`Server running on http://localhost:${port}/`);
+
+    // Initialize Distro Buzz services
+    try {
+      registerAllAdapters();
+      await seedPlatformRegistry();
+      await distributionEngine.start();
+      console.log("[Distro Buzz] Distribution engine started");
+    } catch (error) {
+      console.error("[Distro Buzz] Failed to initialize services:", error);
+    }
   });
 }
 
