@@ -47,12 +47,13 @@ export const artists = mysqlTable(
   "artists",
   {
     id: varchar("id", { length: 36 }).primaryKey(),
-    userId: int("userId").notNull(),
+    userId: int("userId"),
     soundcloudUsername: varchar("soundcloudUsername", { length: 255 }),
     soundcloudAccessToken: text("soundcloudAccessToken"),
     soundcloudUserId: varchar("soundcloudUserId", { length: 255 }),
     name: varchar("name", { length: 255 }).notNull(),
-    email: varchar("email", { length: 320 }).notNull(),
+    email: varchar("email", { length: 320 }).notNull().unique(),
+    passwordHash: text("passwordHash"),
     avatarUrl: text("avatarUrl"),
     bio: text("bio"),
     websiteUrl: text("websiteUrl"),
@@ -62,7 +63,7 @@ export const artists = mysqlTable(
     updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   },
   (table) => ({
-    userIdIdx: index("artists_userId_idx").on(table.userId),
+    emailIdx: uniqueIndex("artists_email_idx").on(table.email),
     soundcloudUserIdIdx: index("artists_soundcloudUserId_idx").on(table.soundcloudUserId),
   })
 );

@@ -203,4 +203,66 @@
   .status-retrying {
     box-shadow: 0 0 6px oklch(0.72 0.25 340 / 50%);
   }
+
+  /* Mobile-first responsive utilities */
+  .mobile-only {
+    @apply block md:hidden;
+  }
+  .desktop-only {
+    @apply hidden md:block;
+  }
+
+  /* Touch-friendly sizing for mobile */
+  @media (max-width: 768px) {
+    button,
+    [role="button"],
+    input[type="checkbox"],
+    input[type="radio"],
+    select {
+      min-height: 44px;
+      min-width: 44px;
+    }
+  }
+
+  /* Animations */
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes slide-up {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes pulse-glow {
+    0%, 100% {
+      box-shadow: 0 0 10px oklch(0.85 0.25 145 / 30%);
+    }
+    50% {
+      box-shadow: 0 0 20px oklch(0.85 0.25 145 / 60%);
+    }
+  }
+
+  .animate-fade-in {
+    animation: fade-in 0.5s ease-in-out;
+  }
+
+  .animate-slide-up {
+    animation: slide-up 0.5s ease-out;
+  }
+
+  .animate-pulse-glow {
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
 }

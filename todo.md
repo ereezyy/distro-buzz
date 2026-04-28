@@ -69,3 +69,87 @@
 - [x] Auth logout test (1 test passing)
 - [x] SoundCloud monitor tests (4 tests passing)
 - [x] API router unit tests with mocked DB (17 tests passing)
+
+
+## PHASE 2: LUXURY BRAND UPGRADE
+
+### Custom JWT Auth
+- [ ] Remove Manus OAuth integration
+- [ ] Implement JWT-based authentication (email/password)
+- [ ] Create auth service with sign up, login, forgot password
+- [ ] Add password hashing (bcrypt) and JWT token generation
+- [ ] Build auth modal/page UI
+- [ ] Add auth state management to frontend
+- [ ] Implement protected routes and API endpoints
+
+### Immersive Landing Page
+- [ ] Create particle/wave background animation (audio visualizer style)
+- [ ] Implement smooth scroll animations and parallax effects
+- [ ] Design hero section with animated gradient text
+- [ ] Add pulsing CTA buttons
+- [ ] Build social proof section with testimonials
+- [ ] Create feature showcase with animations
+- [ ] Add luxury brand styling and typography
+- [ ] Implement smooth transitions between sections
+
+### Social Platform Adapters
+- [ ] TikTok adapter (API integration)
+- [ ] Facebook adapter (API integration)
+- [ ] Threads adapter (API integration)
+- [ ] Instagram adapter (API integration)
+- [ ] Snapchat adapter (API integration)
+- [ ] X.com (Twitter) adapter (API integration)
+- [ ] Reddit adapter (API integration)
+- [ ] Telegram adapter (API integration)
+- [ ] Update platform registry with 8 new platforms
+
+### Pricing Page
+- [ ] Design pricing cards for 3 tiers (Starter, Pro, Label)
+- [ ] Implement feature comparison table
+- [ ] Add pricing toggle (monthly/annual)
+- [ ] Create CTA buttons with Stripe integration stubs
+- [ ] Build FAQ section
+- [ ] Add testimonials/case studies
+
+### Ad Placement System
+- [ ] Create ad placement database tables
+- [ ] Build business dashboard for ad purchases
+- [ ] Implement ad rendering system (banner, featured artist, sponsored)
+- [ ] Create admin panel for ad management
+- [ ] Add non-intrusive ad placement throughout platform
+- [ ] Track ad impressions and clicks
+
+### API Documentation
+- [ ] Create API docs page with endpoint reference
+- [ ] Add authentication guide
+- [ ] Include code examples (JavaScript, Python, cURL)
+- [ ] Document all tRPC procedures
+- [ ] Add rate limiting documentation
+- [ ] Create webhook documentation
+
+### Artist Onboarding Wizard
+- [ ] Build step-by-step wizard UI
+- [ ] Step 1: Connect SoundCloud
+- [ ] Step 2: Choose platforms to distribute to
+- [ ] Step 3: Set distribution preferences
+- [ ] Step 4: Review and confirm
+- [ ] Add progress indicators and tooltips
+- [ ] Implement completion tracking
+
+### Mobile Responsiveness
+- [ ] Audit all pages for mobile compatibility
+- [ ] Implement hamburger menu for navigation
+- [ ] Make all buttons touch-friendly
+- [ ] Test on iOS and Android
+- [ ] Optimize images for mobile
+- [ ] Ensure forms are mobile-optimized
+- [ ] Test performance on 3G/4G
+
+### Testing & Deployment
+- [ ] Write tests for JWT auth
+- [ ] Write tests for new adapters
+- [ ] Integration tests for pricing system
+- [ ] E2E tests for onboarding flow
+- [ ] Performance testing and optimization
+- [ ] Security audit
+- [ ] Final checkpoint and GitHub push

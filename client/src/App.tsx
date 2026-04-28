@@ -13,11 +13,12 @@ import Onboarding from "./pages/Onboarding";
 import Analytics from "./pages/Analytics";
 import Admin from "./pages/Admin";
 import Aggregators from "./pages/Aggregators";
+import LandingPage from "./pages/LandingPage";
 
-function Router() {
-  return (
+function Router() {  return (
     <Switch>
-      <Route path={"/"} component={Home} />
+      <Route path={"/ "} component={LandingPage} />
+      <Route path={"/home"} component={Home} />
       <Route path={"/dashboard"} component={Dashboard} />
       <Route path={"/tracks"} component={TrackLibrary} />
       <Route path={"/platforms"} component={PlatformRegistry} />
