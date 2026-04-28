@@ -352,7 +352,7 @@ export function getSocialAdapter(platformName: string): SocialPlatformAdapter | 
 /**
  * Seed social platforms into platform registry
  */
-export async function seedSocialPlatforms(db: any) {
+export async function seedSocialPlatforms(createOrUpdatePlatform: (data: any) => Promise<any>) {
   const socialPlatforms = [
     {
       name: "TikTok",
@@ -412,8 +412,20 @@ export async function seedSocialPlatforms(db: any) {
     },
   ];
 
-  logger.info("[SocialPlatforms] Seeding social platforms", { count: socialPlatforms.length });
+  for (const platform of socialPlatforms) {
+    const id = platform.name.toLowerCase().replace(/\s+/g, "_");
+    await createOrUpdatePlatform({
+      id,
+      name: platform.name,
+      category: platform.category as "social",
+      integrationMethod: "direct_api" as const,
+      apiEndpoint: platform.apiEndpoint,
+      priority: 75,
+      estimatedTimeToLive: "Immediate",
+      enabled: true,
+      healthStatus: "unknown",
+    });
+  }
 
-  // Platforms will be seeded during server startup if not already present
-  return socialPlatforms;
+  logger.info(`[SocialPlatforms] Seeded ${socialPlatforms.length} social platforms into registry`);
 }

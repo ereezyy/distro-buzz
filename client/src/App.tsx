@@ -14,20 +14,30 @@ import Analytics from "./pages/Analytics";
 import Admin from "./pages/Admin";
 import Aggregators from "./pages/Aggregators";
 import LandingPage from "./pages/LandingPage";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
+import ApiDocs from "./pages/ApiDocs";
+import AdDashboard from "./pages/AdDashboard";
+import OnboardingWizard from "./pages/OnboardingWizard";
 
-function Router() {  return (
+function Router() {
+  return (
     <Switch>
-      <Route path={"/ "} component={LandingPage} />
-      <Route path={"/home"} component={Home} />
-      <Route path={"/dashboard"} component={Dashboard} />
-      <Route path={"/tracks"} component={TrackLibrary} />
-      <Route path={"/platforms"} component={PlatformRegistry} />
-      <Route path={"/logs/:jobId?"} component={JobLogs} />
-      <Route path={"/onboarding"} component={Onboarding} />
-      <Route path={"/analytics"} component={Analytics} />
-      <Route path={"/admin"} component={Admin} />
-      <Route path={"/aggregators"} component={Aggregators} />
-      <Route path={"/404"} component={NotFound} />
+      <Route path="/" component={LandingPage} />
+      <Route path="/login" component={Login} />
+      <Route path="/signup" component={Signup} />
+      <Route path="/home" component={Home} />
+      <Route path="/dashboard" component={Dashboard} />
+      <Route path="/tracks" component={TrackLibrary} />
+      <Route path="/platforms" component={PlatformRegistry} />
+      <Route path="/logs/:jobId?" component={JobLogs} />
+      <Route path="/onboarding" component={OnboardingWizard} />
+      <Route path="/analytics" component={Analytics} />
+      <Route path="/admin" component={Admin} />
+      <Route path="/aggregators" component={Aggregators} />
+      <Route path="/api-docs" component={ApiDocs} />
+      <Route path="/ad-dashboard" component={AdDashboard} />
+      <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>
   );

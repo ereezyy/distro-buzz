@@ -199,7 +199,7 @@ export default function LandingPage() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
             <Button
               onClick={() => setLocation("/signup")}
-              className="px-8 py-6 text-lg bg-neon-green text-black hover:bg-neon-green/90 neon-glow font-bold"
+              className="px-8 py-6 text-lg bg-neon-green text-black hover:bg-neon-green/90 neon-glow font-bold animate-pulse-glow"
             >
               Start Free Trial <ArrowRight className="ml-2 w-5 h-5" />
             </Button>
@@ -418,7 +418,7 @@ export default function LandingPage() {
           </p>
           <Button
             onClick={() => setLocation("/signup")}
-            className="px-8 py-6 text-lg bg-neon-green text-black hover:bg-neon-green/90 neon-glow font-bold"
+            className="px-8 py-6 text-lg bg-neon-green text-black hover:bg-neon-green/90 neon-glow font-bold animate-pulse-glow"
           >
             Start Your Free Trial <ArrowRight className="ml-2 w-5 h-5" />
           </Button>
@@ -426,8 +426,40 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="relative z-10 border-t border-slate-800 py-8 px-6 text-center text-slate-400 text-sm">
-        <p>© 2026 Distro Buzz. All rights reserved. Made with ❤️ for independent musicians.</p>
+      <footer className="relative z-10 border-t border-slate-800 py-12 px-6">
+        <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 mb-8">
+          <div>
+            <h4 className="text-sm font-bold text-white mb-3">Product</h4>
+            <ul className="space-y-2 text-sm text-slate-400">
+              <li><button onClick={() => setLocation("/signup")} className="hover:text-neon-green transition-colors">Get Started</button></li>
+              <li><button onClick={() => setLocation("/api-docs")} className="hover:text-neon-green transition-colors">API Docs</button></li>
+            </ul>
+          </div>
+          <div>
+            <h4 className="text-sm font-bold text-white mb-3">Platform</h4>
+            <ul className="space-y-2 text-sm text-slate-400">
+              <li><button onClick={() => setLocation("/platforms")} className="hover:text-neon-green transition-colors">Platforms</button></li>
+              <li><button onClick={() => setLocation("/ad-dashboard")} className="hover:text-neon-green transition-colors">Advertise</button></li>
+            </ul>
+          </div>
+          <div>
+            <h4 className="text-sm font-bold text-white mb-3">Company</h4>
+            <ul className="space-y-2 text-sm text-slate-400">
+              <li><span className="cursor-default">About</span></li>
+              <li><span className="cursor-default">Blog</span></li>
+            </ul>
+          </div>
+          <div>
+            <h4 className="text-sm font-bold text-white mb-3">Legal</h4>
+            <ul className="space-y-2 text-sm text-slate-400">
+              <li><span className="cursor-default">Privacy</span></li>
+              <li><span className="cursor-default">Terms</span></li>
+            </ul>
+          </div>
+        </div>
+        <div className="text-center text-slate-500 text-sm border-t border-slate-800 pt-8">
+          <p>&copy; 2026 Distro Buzz. All rights reserved. Built for independent musicians.</p>
+        </div>
       </footer>
     </div>
   );

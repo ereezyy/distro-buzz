@@ -18,6 +18,7 @@ import {
 } from "./aggregatorStubs";
 import * as db from "../../db";
 import logger from "../../utils/logger";
+import { seedSocialPlatforms } from "./socialPlatforms";
 
 /**
  * Register all platform adapters with the distribution engine
@@ -179,6 +180,9 @@ export async function seedPlatformRegistry(): Promise<void> {
   }
 
   logger.info(`[Adapters] Seeded ${platforms.length} platforms into registry`);
+
+  // Seed social platforms (TikTok, Facebook, Threads, Instagram, Snapchat, X, Reddit, Telegram)
+  await seedSocialPlatforms(db.createOrUpdatePlatform);
 }
 
 export {

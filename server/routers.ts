@@ -5,6 +5,7 @@ import { publicProcedure, router, protectedProcedure } from "./_core/trpc";
 import { z } from "zod";
 import { v4 as uuidv4 } from "uuid";
 import * as db from "./db";
+import * as authService from "./services/authService";
 
 // ============================================================================
 // ARTISTS ROUTER
@@ -474,6 +475,90 @@ const adminRouter = router({
 });
 
 // ============================================================================
+// CUSTOM AUTH ROUTER (JWT-based email/password)
+// ============================================================================
+
+const customAuthRouter = router({
+  signup: publicProcedure
+    .input(z.object({
+      name: z.string().min(1),
+      email: z.string().email(),
+      password: z.string().min(8),
+    }))
+    .mutation(async ({ input }) => {
+      const tokens = await authService.signup(input.email, input.password, input.name);
+      return tokens;
+    }),
+
+  login: publicProcedure
+    .input(z.object({
+      email: z.string().email(),
+      password: z.string().min(1),
+    }))
+    .mutation(async ({ input }) => {
+      const tokens = await authService.login(input.email, input.password);
+      return tokens;
+    }),
+
+  refresh: publicProcedure
+    .input(z.object({
+      refreshToken: z.string(),
+    }))
+    .mutation(async ({ input }) => {
+      const result = await authService.refreshAccessToken(input.refreshToken);
+      return result;
+    }),
+
+  requestPasswordReset: publicProcedure
+    .input(z.object({
+      email: z.string().email(),
+    }))
+    .mutation(async ({ input }) => {
+      const result = await authService.requestPasswordReset(input.email);
+      return { success: true, message: "If an account exists with that email, a reset link has been sent." };
+    }),
+
+  resetPassword: publicProcedure
+    .input(z.object({
+      token: z.string(),
+      newPassword: z.string().min(8),
+    }))
+    .mutation(async ({ input }) => {
+      await authService.resetPassword(input.token, input.newPassword);
+      return { success: true };
+    }),
+});
+
+// ============================================================================
+// AGGREGATORS ROUTER
+// ============================================================================
+
+const aggregatorsRouter = router({
+  list: protectedProcedure.query(async ({ ctx }) => {
+    return db.getAggregatorAccountsByArtistId(String(ctx.user.id));
+  }),
+
+  connect: protectedProcedure
+    .input(z.object({
+      aggregatorId: z.string(),
+      apiKey: z.string().optional(),
+      accountName: z.string().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const id = uuidv4();
+      await db.createAggregatorAccount({
+        id,
+        artistId: String(ctx.user.id),
+        aggregatorId: input.aggregatorId,
+        accountName: input.accountName,
+        apiKey: input.apiKey,
+        accountStatus: "active",
+      });
+      return { success: true, id };
+    }),
+});
+
+// ============================================================================
 // MAIN ROUTER
 // ============================================================================
 
@@ -497,6 +582,8 @@ export const appRouter = router({
   platforms: platformsRouter,
   analytics: analyticsRouter,
   admin: adminRouter,
+  customAuth: customAuthRouter,
+  aggregators: aggregatorsRouter,
 });
 
 export type AppRouter = typeof appRouter;
