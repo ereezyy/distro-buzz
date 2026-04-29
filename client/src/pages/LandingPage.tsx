@@ -186,7 +186,7 @@ export default function LandingPage() {
 
           <h1 className="text-6xl md:text-7xl font-black leading-tight">
             <span className="block">One Track.</span>
-            <span className="block bg-gradient-to-r from-neon-green via-neon-cyan to-neon-pink bg-clip-text text-transparent neon-glow">
+            <span className="block bg-gradient-to-r from-neon-green via-neon-cyan to-neon-blue bg-clip-text text-transparent neon-glow">
               Infinite Reach.
             </span>
             <span className="block text-slate-400">Everywhere.</span>

@@ -131,7 +131,7 @@ export default function AdDashboard() {
                     <p className="text-slate-400 text-sm">Total Clicks</p>
                     <p className="text-3xl font-bold">{stats.totalClicks}</p>
                   </div>
-                  <MousePointerClick className="w-8 h-8 text-neon-pink opacity-50" />
+                  <MousePointerClick className="w-8 h-8 text-neon-blue opacity-50" />
                 </div>
               </Card>
 

@@ -168,8 +168,8 @@ export default function Home() {
                 title: "Everywhere, Always",
                 description:
                   "Spotify, Apple Music, YouTube, Tidal, Deezer, Bandcamp, TikTok, Instagram, Beatport, and more. Real-time status tracking for every platform.",
-                color: "text-neon-purple",
-                borderColor: "hover:border-neon-purple/40",
+                color: "text-neon-blue",
+                borderColor: "hover:border-neon-blue/40",
               },
             ].map((feature) => (
               <div

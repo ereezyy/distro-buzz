@@ -34,7 +34,7 @@ function StatusBadge({ status }: { status: string }) {
     },
     retrying: {
       label: "RETRYING",
-      className: "bg-neon-pink/20 text-neon-pink border-neon-pink/40",
+      className: "bg-neon-blue/20 text-neon-blue border-neon-blue/40",
     },
     success: {
       label: "SUCCESS",
@@ -138,7 +138,7 @@ function JobLogsContent() {
                           : "—"}
                       </span>
                       {job.retryCount > 0 && (
-                        <span className="flex items-center gap-1 text-neon-pink">
+                        <span className="flex items-center gap-1 text-neon-blue">
                           <RotateCcw className="w-3 h-3" />
                           {job.retryCount} retries
                         </span>
@@ -171,7 +171,7 @@ function JobLogsContent() {
                         size="sm"
                         onClick={() => retryMutation.mutate({ id: job.id })}
                         disabled={retryMutation.isPending}
-                        className="border-neon-pink/30 hover:border-neon-pink/60 text-xs"
+                        className="border-neon-blue/30 hover:border-neon-blue/60 text-xs"
                       >
                         <RotateCcw className="w-3 h-3 mr-1" />
                         Retry

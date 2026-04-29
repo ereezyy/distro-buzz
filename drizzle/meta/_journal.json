@@ -29,6 +29,20 @@
       "when": 1777359324259,
       "tag": "0003_watery_major_mapleleaf",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1777366986506,
+      "tag": "0004_narrow_weapon_omega",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "5",
+      "when": 1777367082504,
+      "tag": "0005_cooing_toxin",
+      "breakpoints": true
     }
   ]
 }

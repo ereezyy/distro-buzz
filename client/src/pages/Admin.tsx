@@ -82,7 +82,7 @@ function AdminContent() {
         {[
           { label: "Queued", value: stats?.queue.queued ?? 0, color: "text-neon-amber" },
           { label: "Processing", value: stats?.queue.processing ?? 0, color: "text-neon-cyan" },
-          { label: "Retrying", value: stats?.queue.retrying ?? 0, color: "text-neon-pink" },
+          { label: "Retrying", value: stats?.queue.retrying ?? 0, color: "text-neon-blue" },
           { label: "Failed", value: stats?.queue.failed ?? 0, color: "text-destructive" },
           { label: "Total Active", value: stats?.queue.total ?? 0, color: "text-primary" },
         ].map((s) => (

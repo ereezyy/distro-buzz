@@ -385,3 +385,345 @@ export const adEvents = mysqlTable(
 
 export type AdEvent = typeof adEvents.$inferSelect;
 export type InsertAdEvent = typeof adEvents.$inferInsert;
+
+
+/**
+ * AI Talent Agents (one per user, manages gigs, outreach, legal)
+ */
+export const aiAgents = mysqlTable(
+  "aiAgents",
+  {
+    id: varchar("id", { length: 36 }).primaryKey(),
+    userId: int("userId").notNull().unique(),
+    talentType: mysqlEnum("talentType", [
+      "musician",
+      "model",
+      "visual_artist",
+      "performer",
+      "influencer",
+      "voice_actor",
+      "photographer",
+      "dj",
+    ]).notNull(),
+    personality: text("personality"), // AI personality description
+    status: mysqlEnum("status", ["active", "paused", "inactive"]).default("active").notNull(),
+    lastActivityAt: timestamp("lastActivityAt"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  (table) => ({
+    userIdIdx: index("aiAgents_userId_idx").on(table.userId),
+    talentTypeIdx: index("aiAgents_talentType_idx").on(table.talentType),
+  })
+);
+
+export type AiAgent = typeof aiAgents.$inferSelect;
+export type InsertAiAgent = typeof aiAgents.$inferInsert;
+
+/**
+ * Gigs (booking opportunities discovered and managed by AI agent)
+ */
+export const gigs = mysqlTable(
+  "gigs",
+  {
+    id: varchar("id", { length: 36 }).primaryKey(),
+    userId: int("userId").notNull(),
+    agentId: varchar("agentId", { length: 36 }).notNull(),
+    title: varchar("title", { length: 255 }).notNull(),
+    description: text("description"),
+    venue: varchar("venue", { length: 255 }),
+    date: timestamp("date"),
+    rateCents: int("rateCents"), // rate in cents
+    status: mysqlEnum("status", ["discovered", "interested", "negotiating", "booked", "completed", "declined"])
+      .default("discovered")
+      .notNull(),
+    source: varchar("source", { length: 100 }), // job board, casting call, brand, etc.
+    aiRecommendationScore: decimal("aiRecommendationScore", { precision: 3, scale: 2 }),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  (table) => ({
+    userIdIdx: index("gigs_userId_idx").on(table.userId),
+    agentIdIdx: index("gigs_agentId_idx").on(table.agentId),
+    dateIdx: index("gigs_date_idx").on(table.date),
+    statusIdx: index("gigs_status_idx").on(table.status),
+  })
+);
+
+export type Gig = typeof gigs.$inferSelect;
+export type InsertGig = typeof gigs.$inferInsert;
+
+/**
+ * Legal Filings (DMCA, copyright, contracts, brand protection)
+ */
+export const legalFilings = mysqlTable(
+  "legalFilings",
+  {
+    id: varchar("id", { length: 36 }).primaryKey(),
+    userId: int("userId").notNull(),
+    type: mysqlEnum("type", [
+      "dmca_takedown",
+      "copyright_registration",
+      "contract",
+      "brand_protection",
+      "ip_portfolio",
+    ]).notNull(),
+    title: varchar("title", { length: 255 }).notNull(),
+    description: text("description"),
+    status: mysqlEnum("status", ["draft", "filed", "in_progress", "resolved", "expired"])
+      .default("draft")
+      .notNull(),
+    documentUrl: text("documentUrl"),
+    filingDate: timestamp("filingDate"),
+    resolvedDate: timestamp("resolvedDate"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  (table) => ({
+    userIdIdx: index("legalFilings_userId_idx").on(table.userId),
+    typeIdx: index("legalFilings_type_idx").on(table.type),
+    statusIdx: index("legalFilings_status_idx").on(table.status),
+  })
+);
+
+export type LegalFiling = typeof legalFilings.$inferSelect;
+export type InsertLegalFiling = typeof legalFilings.$inferInsert;
+
+/**
+ * Contracts (generated and managed by AI agent)
+ */
+export const contracts = mysqlTable(
+  "contracts",
+  {
+    id: varchar("id", { length: 36 }).primaryKey(),
+    userId: int("userId").notNull(),
+    gigId: varchar("gigId", { length: 36 }),
+    template: varchar("template", { length: 100 }), // template type (appearance, licensing, etc.)
+    customization: text("customization"), // AI customization notes
+    documentUrl: text("documentUrl"),
+    status: mysqlEnum("status", ["draft", "proposed", "signed", "archived"])
+      .default("draft")
+      .notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  (table) => ({
+    userIdIdx: index("contracts_userId_idx").on(table.userId),
+    gigIdIdx: index("contracts_gigId_idx").on(table.gigId),
+    statusIdx: index("contracts_status_idx").on(table.status),
+  })
+);
+
+export type Contract = typeof contracts.$inferSelect;
+export type InsertContract = typeof contracts.$inferInsert;
+
+/**
+ * Media Assets (press kits, photos, videos, bios)
+ */
+export const mediaAssets = mysqlTable(
+  "mediaAssets",
+  {
+    id: varchar("id", { length: 36 }).primaryKey(),
+    userId: int("userId").notNull(),
+    type: mysqlEnum("type", ["photo", "video", "bio", "press_kit", "audio", "document"]).notNull(),
+    title: varchar("title", { length: 255 }).notNull(),
+    url: text("url").notNull(),
+    brandCompliance: boolean("brandCompliance").default(true),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  (table) => ({
+    userIdIdx: index("mediaAssets_userId_idx").on(table.userId),
+    typeIdx: index("mediaAssets_type_idx").on(table.type),
+  })
+);
+
+export type MediaAsset = typeof mediaAssets.$inferSelect;
+export type InsertMediaAsset = typeof mediaAssets.$inferInsert;
+
+/**
+ * Subscriptions (AI agent features, a la carte pricing)
+ */
+export const subscriptions = mysqlTable(
+  "subscriptions",
+  {
+    id: varchar("id", { length: 36 }).primaryKey(),
+    userId: int("userId").notNull().unique(),
+    stripeCustomerId: varchar("stripeCustomerId", { length: 100 }),
+    stripeSubscriptionId: varchar("stripeSubscriptionId", { length: 100 }),
+    features: json("features").$type<string[]>().default([]), // array of feature names
+    status: mysqlEnum("status", ["active", "paused", "canceled", "past_due"])
+      .default("active")
+      .notNull(),
+    currentPeriodStart: timestamp("currentPeriodStart"),
+    currentPeriodEnd: timestamp("currentPeriodEnd"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  (table) => ({
+    userIdIdx: index("subscriptions_userId_idx").on(table.userId),
+    stripeCustomerIdIdx: index("subscriptions_stripeCustomerId_idx").on(table.stripeCustomerId),
+  })
+);
+
+export type Subscription = typeof subscriptions.$inferSelect;
+export type InsertSubscription = typeof subscriptions.$inferInsert;
+
+/**
+ * Outreach Log (AI agent outreach to venues, brands, agencies)
+ */
+export const outreachLog = mysqlTable(
+  "outreachLog",
+  {
+    id: varchar("id", { length: 36 }).primaryKey(),
+    agentId: varchar("agentId", { length: 36 }).notNull(),
+    targetName: varchar("targetName", { length: 255 }).notNull(),
+    targetEmail: varchar("targetEmail", { length: 320 }),
+    targetPhone: varchar("targetPhone", { length: 20 }),
+    message: text("message"),
+    responseReceived: boolean("responseReceived").default(false),
+    response: text("response"),
+    status: mysqlEnum("status", ["sent", "bounced", "replied", "interested", "declined", "no_response"])
+      .default("sent")
+      .notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  (table) => ({
+    agentIdIdx: index("outreachLog_agentId_idx").on(table.agentId),
+    statusIdx: index("outreachLog_status_idx").on(table.status),
+  })
+);
+
+export type OutreachLogEntry = typeof outreachLog.$inferSelect;
+export type InsertOutreachLogEntry = typeof outreachLog.$inferInsert;
+
+
+/**
+ * Voice Calls (AI agent phone outreach)
+ */
+export const voiceCalls = mysqlTable(
+  "voiceCalls",
+  {
+    id: varchar("id", { length: 36 }).primaryKey(),
+    agentId: varchar("agentId", { length: 36 }).notNull(),
+    targetName: varchar("targetName", { length: 255 }).notNull(),
+    targetPhone: varchar("targetPhone", { length: 20 }).notNull(),
+    purpose: varchar("purpose", { length: 100 }), // gig_pitch, negotiation, follow_up
+    status: mysqlEnum("status", ["initiated", "ringing", "connected", "completed", "failed", "voicemail"])
+      .default("initiated")
+      .notNull(),
+    durationSeconds: int("durationSeconds"),
+    recordingUrl: text("recordingUrl"),
+    transcriptUrl: text("transcriptUrl"),
+    outcome: varchar("outcome", { length: 100 }), // interested, not_interested, callback_scheduled, etc.
+    notes: text("notes"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  (table) => ({
+    agentIdIdx: index("voiceCalls_agentId_idx").on(table.agentId),
+    statusIdx: index("voiceCalls_status_idx").on(table.status),
+    createdAtIdx: index("voiceCalls_createdAt_idx").on(table.createdAt),
+  })
+);
+
+export type VoiceCall = typeof voiceCalls.$inferSelect;
+export type InsertVoiceCall = typeof voiceCalls.$inferInsert;
+
+/**
+ * Merch Products (print-on-demand via Printful)
+ */
+export const merchProducts = mysqlTable(
+  "merchProducts",
+  {
+    id: varchar("id", { length: 36 }).primaryKey(),
+    userId: int("userId").notNull(),
+    printfulProductId: varchar("printfulProductId", { length: 100 }),
+    type: mysqlEnum("type", ["t_shirt", "hoodie", "sticker", "poster", "phone_case", "mug", "hat"])
+      .notNull(),
+    title: varchar("title", { length: 255 }).notNull(),
+    description: text("description"),
+    imageUrl: text("imageUrl"),
+    basePrice: int("basePrice"), // base cost in cents
+    retailPrice: int("retailPrice"), // retail price in cents
+    profitMargin: decimal("profitMargin", { precision: 3, scale: 2 }), // artist profit %
+    status: mysqlEnum("status", ["draft", "active", "archived"]).default("draft").notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  (table) => ({
+    userIdIdx: index("merchProducts_userId_idx").on(table.userId),
+    typeIdx: index("merchProducts_type_idx").on(table.type),
+    statusIdx: index("merchProducts_status_idx").on(table.status),
+  })
+);
+
+export type MerchProduct = typeof merchProducts.$inferSelect;
+export type InsertMerchProduct = typeof merchProducts.$inferInsert;
+
+/**
+ * Merch Orders (fulfilled by Printful)
+ */
+export const merchOrders = mysqlTable(
+  "merchOrders",
+  {
+    id: varchar("id", { length: 36 }).primaryKey(),
+    userId: int("userId").notNull(),
+    productId: varchar("productId", { length: 36 }).notNull(),
+    printfulOrderId: varchar("printfulOrderId", { length: 100 }),
+    customerEmail: varchar("customerEmail", { length: 320 }).notNull(),
+    quantity: int("quantity").notNull(),
+    totalPrice: int("totalPrice"), // total in cents
+    artistProfit: int("artistProfit"), // artist's cut in cents
+    status: mysqlEnum("status", [
+      "pending",
+      "confirmed",
+      "production",
+      "shipped",
+      "delivered",
+      "cancelled",
+    ])
+      .default("pending")
+      .notNull(),
+    trackingNumber: varchar("trackingNumber", { length: 100 }),
+    shippingDate: timestamp("shippingDate"),
+    deliveryDate: timestamp("deliveryDate"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  (table) => ({
+    userIdIdx: index("merchOrders_userId_idx").on(table.userId),
+    productIdIdx: index("merchOrders_productId_idx").on(table.productId),
+    statusIdx: index("merchOrders_status_idx").on(table.status),
+  })
+);
+
+export type MerchOrder = typeof merchOrders.$inferSelect;
+export type InsertMerchOrder = typeof merchOrders.$inferInsert;
+
+/**
+ * Gig Syndicate Sources (scraped opportunities)
+ */
+export const gigSources = mysqlTable(
+  "gigSources",
+  {
+    id: varchar("id", { length: 36 }).primaryKey(),
+    agentId: varchar("agentId", { length: 36 }).notNull(),
+    source: varchar("source", { length: 100 }).notNull(), // venue_listings, casting_calls, etc.
+    title: varchar("title", { length: 255 }).notNull(),
+    description: text("description"),
+    url: text("url"),
+    relevanceScore: decimal("relevanceScore", { precision: 3, scale: 2 }), // 0-1
+    status: mysqlEnum("status", ["new", "reviewed", "applied", "rejected"]).default("new").notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  (table) => ({
+    agentIdIdx: index("gigSources_agentId_idx").on(table.agentId),
+    sourceIdx: index("gigSources_source_idx").on(table.source),
+    relevanceIdx: index("gigSources_relevanceScore_idx").on(table.relevanceScore),
+  })
+);
+
+export type GigSource = typeof gigSources.$inferSelect;
+export type InsertGigSource = typeof gigSources.$inferInsert;

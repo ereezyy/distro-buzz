@@ -6,6 +6,11 @@ import { z } from "zod";
 import { v4 as uuidv4 } from "uuid";
 import * as db from "./db";
 import * as authService from "./services/authService";
+import { VoiceOutreachService } from "./services/voiceOutreach";
+import { GigSyndicateService } from "./services/gigSyndicate";
+import { MerchAutomationService } from "./services/merchAutomation";
+import { stripeCheckoutService } from "./services/stripeCheckout";
+import { aiAgentService } from "./services/aiAgent";
 
 // ============================================================================
 // ARTISTS ROUTER
@@ -633,6 +638,136 @@ const adsRouter = router({
 });
 
 // ============================================================================
+// VOICE OUTREACH ROUTER
+// ============================================================================
+
+const voiceRouter = router({
+  initiateCall: protectedProcedure
+    .input(z.object({
+      agentId: z.string(),
+      targetName: z.string(),
+      targetPhone: z.string(),
+      purpose: z.string(),
+      pitch: z.string(),
+    }))
+    .mutation(async ({ input }) => {
+      return VoiceOutreachService.initiateCall(
+        input.agentId,
+        input.targetName,
+        input.targetPhone,
+        input.purpose,
+        input.pitch
+      );
+    }),
+
+  getCallHistory: protectedProcedure
+    .input(z.object({ agentId: z.string(), limit: z.number().optional() }))
+    .query(async ({ input }) => {
+      return VoiceOutreachService.getCallHistory(input.agentId, input.limit);
+    }),
+
+  getCallAnalytics: protectedProcedure
+    .input(z.object({ agentId: z.string() }))
+    .query(async ({ input }) => {
+      return VoiceOutreachService.getCallAnalytics(input.agentId);
+    }),
+});
+
+// ============================================================================
+// GIG DISCOVERY ROUTER
+// ============================================================================
+
+const gigsRouter = router({
+  discover: protectedProcedure
+    .input(z.object({
+      agentId: z.string(),
+      talentType: z.string(),
+    }))
+    .mutation(async ({ input }) => {
+      return GigSyndicateService.discoverGigs(input.agentId, input.talentType);
+    }),
+
+  getDiscovered: protectedProcedure
+    .input(z.object({ agentId: z.string(), limit: z.number().optional() }))
+    .query(async ({ input }) => {
+      return GigSyndicateService.getDiscoveredGigs(input.agentId, input.limit);
+    }),
+
+  markInterested: protectedProcedure
+    .input(z.object({ sourceId: z.string() }))
+    .mutation(async ({ input }) => {
+      await GigSyndicateService.markGigInterested(input.sourceId);
+      return { success: true };
+    }),
+
+  getAnalytics: protectedProcedure
+    .input(z.object({ agentId: z.string() }))
+    .query(async ({ input }) => {
+      return GigSyndicateService.getGigAnalytics(input.agentId);
+    }),
+});
+
+// ============================================================================
+// MERCH AUTOMATION ROUTER
+// ============================================================================
+
+const merchRouter = router({
+  createProduct: protectedProcedure
+    .input(z.object({
+      productName: z.string(),
+      productType: z.string(),
+      designUrl: z.string(),
+      price: z.number(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      if (!ctx.user) throw new Error("Not authenticated");
+      return MerchAutomationService.createProduct(
+        ctx.user.id,
+        input.productName,
+        input.productType,
+        input.designUrl,
+        input.price
+      );
+    }),
+
+  getUserProducts: protectedProcedure
+    .query(async ({ ctx }) => {
+      if (!ctx.user) throw new Error("Not authenticated");
+      return MerchAutomationService.getUserProducts(ctx.user.id);
+    }),
+
+  processOrder: protectedProcedure
+    .input(z.object({
+      productId: z.string(),
+      quantity: z.number(),
+      customerEmail: z.string(),
+      shippingAddress: z.string(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      if (!ctx.user) throw new Error("Not authenticated");
+      return MerchAutomationService.processOrder(
+        ctx.user.id,
+        input.productId,
+        input.quantity,
+        input.customerEmail,
+        input.shippingAddress
+      );
+    }),
+
+  getUserOrders: protectedProcedure
+    .query(async ({ ctx }) => {
+      if (!ctx.user) throw new Error("Not authenticated");
+      return MerchAutomationService.getUserOrders(ctx.user.id);
+    }),
+
+  getAnalytics: protectedProcedure
+    .query(async ({ ctx }) => {
+      if (!ctx.user) throw new Error("Not authenticated");
+      return MerchAutomationService.getMerchAnalytics(ctx.user.id);
+    }),
+});
+
+// ============================================================================
 // MAIN ROUTER
 // ============================================================================
 
@@ -659,6 +794,99 @@ export const appRouter = router({
   customAuth: customAuthRouter,
   aggregators: aggregatorsRouter,
   ads: adsRouter,
+  voice: voiceRouter,
+  gigs: gigsRouter,
+  merch: merchRouter,
+  stripe: router({
+    createCheckoutSession: protectedProcedure
+      .input(
+        z.object({
+          items: z.array(
+            z.object({
+              type: z.enum(["plan", "feature"]),
+              id: z.string(),
+              name: z.string(),
+              price: z.number(),
+            })
+          ),
+          successUrl: z.string().url(),
+          cancelUrl: z.string().url(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        if (!ctx.user) throw new Error("Not authenticated");
+        return stripeCheckoutService.createCheckoutSession({
+          userId: ctx.user.id.toString(),
+          items: input.items,
+          successUrl: input.successUrl,
+          cancelUrl: input.cancelUrl,
+        });
+      }),
+    getSubscription: protectedProcedure.query(async ({ ctx }) => {
+      if (!ctx.user) throw new Error("Not authenticated");
+      return stripeCheckoutService.getUserSubscription(ctx.user.id.toString());
+    }),
+    cancelSubscription: protectedProcedure.mutation(async ({ ctx }) => {
+      if (!ctx.user) throw new Error("Not authenticated");
+      return stripeCheckoutService.cancelSubscription(ctx.user.id.toString());
+    }),
+  }),
+  aiAgent: router({
+    chat: protectedProcedure
+      .input(z.object({ message: z.string() }))
+      .mutation(async ({ input }) => {
+        return aiAgentService.chat(input.message);
+      }),
+    generateOutreach: protectedProcedure
+      .input(
+        z.object({
+          artistName: z.string(),
+          venueName: z.string(),
+          venueType: z.string(),
+          artistGenres: z.array(z.string()),
+          targetDate: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        return aiAgentService.generateOutreachDraft(input);
+      }),
+    analyzeGig: protectedProcedure
+      .input(
+        z.object({
+          title: z.string(),
+          venue: z.string(),
+          date: z.string(),
+          rate: z.number(),
+          description: z.string(),
+          artistProfile: z.object({
+            name: z.string(),
+            genres: z.array(z.string()),
+            experience: z.string(),
+            previousRate: z.number(),
+          }),
+        })
+      )
+      .mutation(async ({ input }) => {
+        return aiAgentService.analyzeGigOpportunity(input);
+      }),
+    reviewContract: protectedProcedure
+      .input(
+        z.object({
+          contractText: z.string(),
+          artistName: z.string(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        return aiAgentService.reviewContract(input);
+      }),
+    getHistory: protectedProcedure.query(() => {
+      return aiAgentService.getHistory();
+    }),
+    clearHistory: protectedProcedure.mutation(() => {
+      aiAgentService.clearHistory();
+      return { success: true };
+    }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

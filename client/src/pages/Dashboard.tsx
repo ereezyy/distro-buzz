@@ -36,11 +36,11 @@ function StatusBadge({ status }: { status: string }) {
     },
     retrying: {
       label: "RETRYING",
-      className: "bg-neon-pink/20 text-neon-pink border-neon-pink/40 status-retrying",
+      className: "bg-neon-blue/20 text-neon-blue border-neon-blue/40 status-retrying",
     },
     fallback: {
       label: "FALLBACK",
-      className: "bg-neon-purple/20 text-neon-purple border-neon-purple/40",
+      className: "bg-neon-blue/20 text-neon-blue border-neon-blue/40",
     },
   };
 
@@ -264,11 +264,11 @@ function DashboardContent() {
         </Card>
 
         <Card
-          className="cursor-pointer hover:border-neon-purple/40 transition-colors"
+          className="cursor-pointer hover:border-neon-blue/40 transition-colors"
           onClick={() => setLocation("/logs")}
         >
           <CardContent className="pt-6 flex items-center gap-4">
-            <CheckCircle2 className="w-8 h-8 text-neon-purple" />
+            <CheckCircle2 className="w-8 h-8 text-neon-blue" />
             <div>
               <p className="font-medium">Job Logs</p>
               <p className="text-sm text-muted-foreground">
