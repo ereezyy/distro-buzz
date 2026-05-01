@@ -79,7 +79,7 @@
 - [x] Add password hashing (bcrypt) and JWT token generation
 - [x] Build Login + Signup page UI
 - [x] Wire authService into tRPC customAuth router
-- [ ] Remove Manus OAuth integration (kept as fallback) - DEFERRED: Keep OAuth as fallback, document in README
+- [x] Remove Manus OAuth integration - custom JWT auth only
 
 ### Immersive Landing Page
 - [x] Create particle/wave background animation (audio visualizer style)
@@ -145,7 +145,7 @@
 - [x] 41 tests passing (distribution engine, SoundCloud monitor, API routers, auth)
 - [x] Write tests for JWT auth (14 tests passing)
 - [x] Write tests for social platform adapters (14 tests passing)
-- [ ] Final checkpoint and GitHub push to ereezyy/distro-buzz (version 2a2d0450, pushed to ereezyy/distro-buzz)
+- [x] Final checkpoint and GitHub push to ereezyy/distro-buzz (version 2a2d0450, pushed to ereezyy/distro-buzz)
 
 ## SITE AUDIT & FIX
 - [x] Fix 404 on homepage / root route (space in path string)
@@ -226,7 +226,7 @@
 - [x] Tests for AI agent service
 - [x] Tests for Stripe integration
 - [x] Tests for gig discovery engine
-- [ ] Final checkpoint and GitHub push to ereezyy/distro-buzz
+- [x] Final checkpoint and GitHub push to ereezyy/distro-buzz
 
 
 ### Voice Outreach (Twilio + Deepgram)
