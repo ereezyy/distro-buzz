@@ -79,7 +79,7 @@
 - [x] Add password hashing (bcrypt) and JWT token generation
 - [x] Build Login + Signup page UI
 - [x] Wire authService into tRPC customAuth router
-- [ ] Remove Manus OAuth integration (kept as fallback)
+- [ ] Remove Manus OAuth integration (kept as fallback) - DEFERRED: Keep OAuth as fallback, document in README
 
 ### Immersive Landing Page
 - [x] Create particle/wave background animation (audio visualizer style)
@@ -115,7 +115,7 @@
 - [x] Weekly performance chart with demo data
 - [x] Create ad placement database tables (adPlacements + adEvents, migration applied)
 - [x] Wire ads tRPC router to backend (list, create, updateStatus, trackEvent, stats)
-- [ ] Render actual ads throughout platform pages (deferred — needs active ad content)
+- [ ] Render actual ads throughout platform pages - DEFERRED: Needs active ad content and ad slot components
 
 ### API Documentation
 - [x] Create API docs page with endpoint reference (/api-docs)
@@ -139,13 +139,13 @@
 - [x] Touch-friendly button sizing (44px targets)
 - [x] Responsive sidebar with hamburger toggle
 - [x] Full desktop audit across all 14 pages (all render correctly)
-- [ ] Test on iOS and Android (requires physical devices)
+- [ ] Test on iOS and Android (requires physical devices) - DEFERRED: Requires physical device access
 
 ### Testing & Deployment
 - [x] 41 tests passing (distribution engine, SoundCloud monitor, API routers, auth)
 - [x] Write tests for JWT auth (14 tests passing)
 - [x] Write tests for social platform adapters (14 tests passing)
-- [x] Final checkpoint and GitHub push (version 2a2d0450, pushed to ereezyy/distro-buzz)
+- [ ] Final checkpoint and GitHub push to ereezyy/distro-buzz (version 2a2d0450, pushed to ereezyy/distro-buzz)
 
 ## SITE AUDIT & FIX
 - [x] Fix 404 on homepage / root route (space in path string)
@@ -164,13 +164,13 @@
 ## PHASE 3: AI TALENT AGENT SYSTEM
 
 ### Database Schema
-- [ ] AI agents table (agentId, userId, talentType, personality, status)
-- [ ] Gigs table (gigId, userId, title, venue, date, rate, status)
-- [ ] Legal filings table (filingId, userId, type, status, dmcaCount, copyrightCount)
-- [ ] Contracts table (contractId, userId, template, customization, status)
-- [ ] Media assets table (assetId, userId, type, url, brandCompliance)
-- [ ] Subscriptions table (subscriptionId, userId, features, stripeCustomerId, status)
-- [ ] Outreach log table (outreachId, agentId, target, message, response, status)
+- [x] AI agents table (agentId, userId, talentType, personality, status)
+- [x] Gigs table (gigId, userId, title, venue, date, rate, status)
+- [x] Legal filings table (filingId, userId, type, status, dmcaCount, copyrightCount)
+- [x] Contracts table (contractId, userId, template, customization, status)
+- [x] Media assets table (assetId, userId, type, url, brandCompliance)
+- [x] Subscriptions table (subscriptionId, userId, features, stripeCustomerId, status)
+- [x] Outreach log table (outreachId, agentId, target, message, response, status)
 
 ### AI Talent Agent Service
 - [x] Groq integration for inference (gig discovery, contract generation, negotiation)
@@ -226,7 +226,7 @@
 - [x] Tests for AI agent service
 - [x] Tests for Stripe integration
 - [x] Tests for gig discovery engine
-- [ ] Final checkpoint and GitHub push
+- [ ] Final checkpoint and GitHub push to ereezyy/distro-buzz
 
 
 ### Voice Outreach (Twilio + Deepgram)
