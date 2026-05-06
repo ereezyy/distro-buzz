@@ -1,21 +1,6 @@
 import { ReactNode, useState } from "react";
 import { useLocation } from "wouter";
-import {
-  LayoutDashboard,
-  Music2,
-  Radio,
-  ScrollText,
-  BarChart2,
-  Settings,
-  LogOut,
-  Zap,
-  Menu,
-  X,
-  Users,
-  Megaphone,
-  BookOpen,
-  Link2,
-} from "lucide-react";
+import { LayoutDashboard, Music2, Radio, ScrollText, ChartBar as BarChart2, Settings, LogOut, Zap, Menu, X, Users, Megaphone, BookOpen, Link2 } from "lucide-react";
 import { useAuth } from "@/_core/hooks/useAuth";
 
 interface NavItem {
