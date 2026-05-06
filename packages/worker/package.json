@@ -16,7 +16,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@distro-buzz/shared": "workspace:*",
+    "@distro-buzz/shared": "*",
     "bull": "^4.11.0",
     "redis": "^4.6.0",
     "pg": "^8.10.0",
