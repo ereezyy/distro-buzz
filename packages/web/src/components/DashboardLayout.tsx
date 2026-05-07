@@ -1,6 +1,19 @@
 import { ReactNode, useState } from "react";
 import { useLocation } from "wouter";
-import { LayoutDashboard, Music2, Radio, ScrollText, ChartBar as BarChart2, Settings, LogOut, Zap, Menu, Megaphone, BookOpen, Link2 } from "lucide-react";
+import {
+  LayoutDashboard,
+  Music2,
+  Radio,
+  ScrollText,
+  TrendingUp,
+  Settings,
+  LogOut,
+  Zap,
+  Menu,
+  Megaphone,
+  BookOpen,
+  Link2,
+} from "lucide-react";
 import { useAuth } from "@/_core/hooks/useAuth";
 
 interface NavItem {
@@ -16,7 +29,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Platforms", path: "/platforms", icon: Radio },
   { label: "Aggregators", path: "/aggregators", icon: Link2 },
   { label: "Job Logs", path: "/logs", icon: ScrollText },
-  { label: "Analytics", path: "/analytics", icon: BarChart2 },
+  { label: "Analytics", path: "/analytics", icon: TrendingUp },
   { label: "Ad Dashboard", path: "/ad-dashboard", icon: Megaphone },
   { label: "API Docs", path: "/api-docs", icon: BookOpen },
   { label: "Admin", path: "/admin", icon: Settings, adminOnly: true },
@@ -89,12 +102,10 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen flex bg-background text-foreground">
-      {/* Desktop sidebar */}
       <div className="hidden lg:flex flex-col w-60 h-screen sticky top-0">
         {sidebar}
       </div>
 
-      {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <div
@@ -107,9 +118,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         </div>
       )}
 
-      {/* Main content */}
       <div className="flex-1 flex flex-col min-h-screen">
-        {/* Mobile top bar */}
         <div className="lg:hidden flex items-center gap-3 px-4 py-3 border-b border-border bg-card/50">
           <button onClick={() => setSidebarOpen(true)}>
             <Menu className="w-5 h-5" />
