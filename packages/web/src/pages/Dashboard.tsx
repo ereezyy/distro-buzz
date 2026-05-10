@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
-import { Activity, TriangleAlert as AlertTriangle, CircleCheck as CheckCircle2, Clock, Music2, Radio, RefreshCw, Zap } from "lucide-react";
+import { Activity, AlertTriangle, CheckCircle2, Clock, Music2, Radio, RefreshCw, Zap } from "lucide-react";
 import { useLocation } from "wouter";
 
 function StatusBadge({ status }: { status: string }) {
