@@ -300,3 +300,78 @@
     transform: translateY(-2px);
   }
 }
+
+  /* Smooth transitions for all interactive elements */
+  button,
+  [role="button"],
+  a,
+  input,
+  select,
+  textarea {
+    @apply transition-all duration-200 ease-out;
+  }
+
+  /* Hover and focus states */
+  button:hover:not(:disabled),
+  [role="button"]:hover:not([aria-disabled="true"]) {
+    @apply transform -translate-y-0.5;
+  }
+
+  button:focus-visible,
+  [role="button"]:focus-visible {
+    @apply ring-2 ring-offset-2 ring-offset-background;
+  }
+
+  /* Loading state animation */
+  @keyframes pulse-glow {
+    0%, 100% {
+      opacity: 1;
+      box-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
+    }
+    50% {
+      opacity: 0.8;
+      box-shadow: 0 0 30px rgba(0, 255, 136, 0.3);
+    }
+  }
+
+  .animate-pulse-glow {
+    animation: pulse-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  /* Skeleton loading animation */
+  @keyframes skeleton-loading {
+    0% {
+      background-position: -1000px 0;
+    }
+    100% {
+      background-position: 1000px 0;
+    }
+  }
+
+  .skeleton {
+    background: linear-gradient(
+      90deg,
+      oklch(0.15 0.01 270) 25%,
+      oklch(0.2 0.01 270) 50%,
+      oklch(0.15 0.01 270) 75%
+    );
+    background-size: 1000px 100%;
+    animation: skeleton-loading 2s infinite;
+  }
+
+  /* Empty state styling */
+  .empty-state {
+    @apply flex flex-col items-center justify-center py-12 px-4 text-center;
+  }
+
+  .empty-state-icon {
+    @apply w-16 h-16 mb-4 text-muted-foreground/50;
+  }
+
+  .empty-state-title {
+    @apply text-lg font-semibold text-foreground mb-2;
+  }
+
+  .empty-state-description {
+    @apply text-sm text-muted-foreground max-w-sm;
+  }

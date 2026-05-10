@@ -33,8 +33,12 @@ const menuItems = [
   { icon: Radio, label: "Platforms", path: "/platforms" },
   { icon: FileText, label: "Job Logs", path: "/logs" },
   { icon: BarChart3, label: "Analytics", path: "/analytics" },
-  { icon: Shield, label: "Admin Panel", path: "/admin" },
-  { icon: Plug, label: "Aggregators", path: "/aggregators" },
+  { icon: Zap, label: "AI Agent", path: "/agent" },
+  { icon: Music2, label: "Gig Discovery", path: "/gigs" },
+  { icon: Shield, label: "Legal", path: "/legal" },
+  { icon: FileText, label: "Media", path: "/media" },
+  { icon: Plug, label: "Merch", path: "/merch" },
+  { icon: Code, label: "Checkout", path: "/checkout" },
   { icon: Code, label: "API Docs", path: "/api-docs" },
 ];
 

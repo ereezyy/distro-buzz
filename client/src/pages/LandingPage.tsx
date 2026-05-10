@@ -152,12 +152,12 @@ export default function LandingPage() {
       <ParticleBackground />
 
       {/* Navigation */}
-      <nav className="relative z-10 flex items-center justify-between px-6 py-4 border-b border-neon-green/10">
-        <div className="flex items-center gap-2">
+      <nav className="relative z-10 flex items-center justify-between px-6 md:px-8 py-5 border-b border-neon-green/10 backdrop-blur-sm">
+        <div className="flex items-center gap-3">
           <Zap className="w-6 h-6 text-neon-green" />
-          <span className="text-xl font-bold neon-glow">Distro Buzz</span>
+          <span className="text-lg md:text-xl font-bold neon-glow tracking-tight">Distro Buzz</span>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3 md:gap-4">
           <Button
             variant="ghost"
             onClick={() => setLocation("/login")}
@@ -177,26 +177,26 @@ export default function LandingPage() {
       {/* Hero Section */}
       <section
         ref={heroRef}
-        className="relative z-10 min-h-[90vh] flex items-center justify-center px-6 py-20"
+        className="relative z-10 min-h-[90vh] flex items-center justify-center px-6 md:px-8 py-24 md:py-32"
       >
-        <div className="max-w-4xl mx-auto text-center space-y-8 animate-fade-in">
+        <div className="max-w-4xl mx-auto text-center space-y-10 animate-fade-in">
           <div className="inline-block px-4 py-2 rounded-full border border-neon-green/40 bg-neon-green/5">
             <span className="text-neon-green text-sm font-mono">⚡ OMNIPRESENT DISTRIBUTION ENGINE</span>
           </div>
 
-          <h1 className="text-6xl md:text-7xl font-black leading-tight">
+          <h1 className="text-5xl md:text-7xl font-black leading-tight tracking-tighter">
             <span className="block">One Track.</span>
             <span className="block bg-gradient-to-r from-neon-green via-neon-cyan to-neon-blue bg-clip-text text-transparent neon-glow">
               Infinite Reach.
             </span>
-            <span className="block text-slate-400">Everywhere.</span>
+            <span className="block text-slate-400 text-4xl md:text-5xl">Everywhere.</span>
           </h1>
 
-          <p className="text-xl text-slate-300 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-lg md:text-xl text-slate-300 max-w-2xl mx-auto leading-relaxed tracking-wide">
             The most aggressive, relentless music distribution engine ever built. Drop a track on SoundCloud and watch it propagate to every platform on the planet. No middlemen. No delays. No exploitation.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center pt-8">
             <Button
               onClick={() => setLocation("/signup")}
               className="px-8 py-6 text-lg bg-neon-green text-black hover:bg-neon-green/90 neon-glow font-bold animate-pulse-glow"
