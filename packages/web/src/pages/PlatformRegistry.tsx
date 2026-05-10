@@ -150,7 +150,7 @@ function PlatformRegistryContent() {
       {nichePlatforms.length > 0 && (
         <div>
           <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
-            <Shield className="w-4 h-4 text-neon-purple" />
+            <Shield className="w-4 h-4 text-neon-cyan" />
             Niche / Specialty Platforms ({nichePlatforms.length})
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">

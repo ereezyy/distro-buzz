@@ -7,6 +7,7 @@ export default {
       colors: {
         "neon-green": "var(--neon-green)",
         "neon-cyan": "var(--neon-cyan)",
+        "neon-teal": "var(--neon-purple)",
         "neon-purple": "var(--neon-purple)",
         "neon-pink": "var(--neon-pink)",
         "neon-amber": "var(--neon-amber)",

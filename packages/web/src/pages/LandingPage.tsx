@@ -31,7 +31,7 @@ function ParticleBackground() {
       color: string;
     }> = [];
 
-    const colors = ["#00ff88", "#00ffff", "#ff00ff", "#ffff00"];
+    const colors = ["#00ff88", "#00ffff", "#ffbb00", "#00e5cc"];
 
     // Create particles
     for (let i = 0; i < 50; i++) {

@@ -4,16 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
-import {
-  Activity,
-  AlertTriangle,
-  CheckCircle2,
-  Clock,
-  Music2,
-  Radio,
-  RefreshCw,
-  Zap,
-} from "lucide-react";
+import { Activity, TriangleAlert as AlertTriangle, CircleCheck as CheckCircle2, Clock, Music2, Radio, RefreshCw, Zap } from "lucide-react";
 import { useLocation } from "wouter";
 
 function StatusBadge({ status }: { status: string }) {
@@ -40,7 +31,7 @@ function StatusBadge({ status }: { status: string }) {
     },
     fallback: {
       label: "FALLBACK",
-      className: "bg-neon-purple/20 text-neon-purple border-neon-purple/40",
+      className: "bg-neon-cyan/20 text-neon-cyan border-neon-cyan/40",
     },
   };
 
@@ -264,11 +255,11 @@ function DashboardContent() {
         </Card>
 
         <Card
-          className="cursor-pointer hover:border-neon-purple/40 transition-colors"
+          className="cursor-pointer hover:border-neon-amber/40 transition-colors"
           onClick={() => setLocation("/logs")}
         >
           <CardContent className="pt-6 flex items-center gap-4">
-            <CheckCircle2 className="w-8 h-8 text-neon-purple" />
+            <CheckCircle2 className="w-8 h-8 text-neon-amber" />
             <div>
               <p className="font-medium">Job Logs</p>
               <p className="text-sm text-muted-foreground">

@@ -6,7 +6,7 @@
   --radius: 0.5rem;
   --neon-green: #00ff88;
   --neon-cyan: #00ffff;
-  --neon-purple: #a855f7;
+  --neon-purple: #00e5cc;
   --neon-pink: #ff00aa;
   --neon-amber: #ffbb00;
 
@@ -23,8 +23,8 @@
   --secondary-foreground: 240 5% 85%;
   --muted: 240 10% 18%;
   --muted-foreground: 240 5% 55%;
-  --accent: 270 80% 60%;
-  --accent-foreground: 270 20% 95%;
+  --accent: 180 80% 40%;
+  --accent-foreground: 180 20% 95%;
   --destructive: 10 80% 55%;
   --destructive-foreground: 0 0% 95%;
   --border: 240 10% 22%;
@@ -45,8 +45,8 @@
   --secondary-foreground: 240 5% 85%;
   --muted: 240 10% 18%;
   --muted-foreground: 240 5% 55%;
-  --accent: 270 80% 60%;
-  --accent-foreground: 270 20% 95%;
+  --accent: 180 80% 40%;
+  --accent-foreground: 180 20% 95%;
   --destructive: 10 80% 55%;
   --destructive-foreground: 0 0% 95%;
   --border: 240 10% 22%;
