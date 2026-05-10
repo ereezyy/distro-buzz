@@ -11,6 +11,9 @@ export default defineConfig({
       "sonner": path.resolve(__dirname, "./src/components/ui/sonner.tsx"),
     },
   },
+  optimizeDeps: {
+    include: ["@supabase/supabase-js"],
+  },
   build: {
     outDir: "dist",
   },
