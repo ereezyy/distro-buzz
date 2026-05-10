@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Zap, Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { useLocation } from "wouter";
-import { trpc } from "@/lib/trpc";
+import { supabase } from "@/lib/supabase";
 
 export default function Signup() {
   const [, setLocation] = useLocation();
@@ -17,20 +17,10 @@ export default function Signup() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const signupMutation = trpc.customAuth.signup.useMutation({
-    onSuccess: (data: { accessToken: string; refreshToken: string }) => {
-      localStorage.setItem("db_access_token", data.accessToken);
-      localStorage.setItem("db_refresh_token", data.refreshToken);
-      setLocation("/onboarding");
-    },
-    onError: (err: { message: string }) => {
-      setError(err.message || "Signup failed. Please try again.");
-    },
-  });
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+
     if (!name || !email || !password || !confirmPassword) {
       setError("Please fill in all fields");
       return;
@@ -43,9 +33,25 @@ export default function Signup() {
       setError("Passwords do not match");
       return;
     }
+
     setLoading(true);
     try {
-      await signupMutation.mutateAsync({ name, email, password });
+      const { error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { name, full_name: name },
+        },
+      });
+
+      if (signUpError) {
+        setError(signUpError.message);
+        return;
+      }
+
+      setLocation("/onboarding");
+    } catch {
+      setError("Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -53,12 +59,10 @@ export default function Signup() {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Background glow effects */}
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-neon-green/5 rounded-full blur-3xl" />
       <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-neon-cyan/5 rounded-full blur-3xl" />
 
       <div className="w-full max-w-md relative z-10">
-        {/* Back to home */}
         <button
           onClick={() => setLocation("/")}
           className="flex items-center gap-2 text-muted-foreground hover:text-foreground mb-8 transition-colors"

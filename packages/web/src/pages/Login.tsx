@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Zap, Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { useLocation } from "wouter";
-import { trpc } from "@/lib/trpc";
+import { supabase } from "@/lib/supabase";
 
 export default function Login() {
   const [, setLocation] = useLocation();
@@ -15,27 +15,27 @@ export default function Login() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const loginMutation = trpc.customAuth.login.useMutation({
-    onSuccess: (data: { accessToken: string; refreshToken: string }) => {
-      localStorage.setItem("db_access_token", data.accessToken);
-      localStorage.setItem("db_refresh_token", data.refreshToken);
-      setLocation("/dashboard");
-    },
-    onError: (err: { message: string }) => {
-      setError(err.message || "Invalid email or password");
-    },
-  });
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+
     if (!email || !password) {
       setError("Please fill in all fields");
       return;
     }
+
     setLoading(true);
     try {
-      await loginMutation.mutateAsync({ email, password });
+      const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+
+      if (signInError) {
+        setError(signInError.message);
+        return;
+      }
+
+      setLocation("/dashboard");
+    } catch {
+      setError("Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -43,12 +43,10 @@ export default function Login() {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Background glow effects */}
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-neon-green/5 rounded-full blur-3xl" />
       <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-neon-cyan/5 rounded-full blur-3xl" />
 
       <div className="w-full max-w-md relative z-10">
-        {/* Back to home */}
         <button
           onClick={() => setLocation("/")}
           className="flex items-center gap-2 text-muted-foreground hover:text-foreground mb-8 transition-colors"
@@ -109,16 +107,6 @@ export default function Login() {
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <button
-                  type="button"
-                  onClick={() => setLocation("/forgot-password")}
-                  className="text-sm text-neon-green hover:text-neon-green/80 transition-colors"
-                >
-                  Forgot password?
-                </button>
               </div>
 
               <Button

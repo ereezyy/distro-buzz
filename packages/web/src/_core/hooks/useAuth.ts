@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import type { User as SupabaseUser, Session } from "@supabase/supabase-js";
+import { supabase } from "@/lib/supabase";
 
 interface User {
   id: string;
@@ -7,26 +9,34 @@ interface User {
   role?: string;
 }
 
+function mapUser(sbUser: SupabaseUser): User {
+  return {
+    id: sbUser.id,
+    email: sbUser.email ?? "",
+    name: sbUser.user_metadata?.name ?? sbUser.user_metadata?.full_name,
+    role: sbUser.user_metadata?.role ?? "user",
+  };
+}
+
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem("auth_token");
-    const userData = localStorage.getItem("auth_user");
-    if (token && userData) {
-      try {
-        setUser(JSON.parse(userData));
-      } catch {
-        // ignore
-      }
-    }
-    setLoading(false);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ? mapUser(session.user) : null);
+      setLoading(false);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ? mapUser(session.user) : null);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  const logout = () => {
-    localStorage.removeItem("auth_token");
-    localStorage.removeItem("auth_user");
+  const logout = async () => {
+    await supabase.auth.signOut();
     setUser(null);
   };
 
