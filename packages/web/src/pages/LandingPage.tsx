@@ -1,124 +1,325 @@
-import { useEffect, useRef, useState, useCallback, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { ArrowRight, Zap } from "lucide-react";
 import { useLocation } from "wouter";
 
-// ─── Waveform Canvas ──────────────────────────────────────────────────────────
+// No purple anywhere. Palette: #00ff88 (green), #00ffff (cyan), #ffbb00 (amber), #ff4444 (red), #FF5500 (orange)
 
-function WaveformCanvas() {
+// ─── Platform data ────────────────────────────────────────────────────────────
+
+const PLATFORMS = [
+  { name: "Spotify",    color: "#1DB954", icon: "S"  },
+  { name: "Apple",      color: "#FC3C44", icon: "A"  },
+  { name: "YouTube",    color: "#FF0000", icon: "YT" },
+  { name: "TikTok",     color: "#69C9D0", icon: "TT" },
+  { name: "SoundCloud", color: "#FF5500", icon: "SC" },
+  { name: "Amazon",     color: "#FF9900", icon: "AM" },
+  { name: "Deezer",     color: "#00C7B1", icon: "DZ" },
+  { name: "Tidal",      color: "#00E8FF", icon: "TD" },
+  { name: "Bandcamp",   color: "#1DA0C3", icon: "BC" },
+  { name: "Pandora",    color: "#00A0EE", icon: "PN" },
+  { name: "iHeart",     color: "#C6002B", icon: "IH" },
+  { name: "Audiomack",  color: "#FFA500", icon: "AU" },
+];
+
+// ─── Mouse tracking ───────────────────────────────────────────────────────────
+
+function useMouse() {
+  const mouse = useRef({ x: 0.5, y: 0.5 });
+  useEffect(() => {
+    const move = (e: MouseEvent) => {
+      mouse.current.x = e.clientX / window.innerWidth;
+      mouse.current.y = e.clientY / window.innerHeight;
+    };
+    window.addEventListener("mousemove", move);
+    return () => window.removeEventListener("mousemove", move);
+  }, []);
+  return mouse;
+}
+
+// ─── Hero Canvas — orbit IS the hero background ───────────────────────────────
+
+interface Packet {
+  platformIdx: number;
+  progress: number;
+  speed: number;
+  sz: number;
+}
+
+function HeroCanvas({ mouse }: { mouse: React.MutableRefObject<{ x: number; y: number }> }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animRef = useRef<number>(0);
-  const timeRef = useRef(0);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d")!;
+    let t = 0;
 
     const resize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = window.innerWidth * dpr;
+      canvas.height = window.innerHeight * dpr;
+      canvas.style.width = `${window.innerWidth}px`;
+      canvas.style.height = `${window.innerHeight}px`;
+      ctx.scale(dpr, dpr);
     };
     resize();
     window.addEventListener("resize", resize);
 
-    const waves = [
-      { amp: 80, freq: 0.008, speed: 0.012, phase: 0, color: "rgba(0,255,136,0.15)", y: 0.45 },
-      { amp: 55, freq: 0.012, speed: 0.018, phase: 2.1, color: "rgba(0,255,255,0.10)", y: 0.50 },
-      { amp: 40, freq: 0.018, speed: 0.025, phase: 4.3, color: "rgba(255,187,0,0.08)", y: 0.55 },
-      { amp: 100, freq: 0.005, speed: 0.008, phase: 1.2, color: "rgba(0,255,136,0.06)", y: 0.48 },
-    ];
+    const packets: Packet[] = [];
+    const bursts: { platformIdx: number; ttl: number; x: number; y: number }[] = [];
+    let pktTimer = 0;
 
-    // Floating orbs
-    const orbs = Array.from({ length: 6 }, (_, i) => ({
-      x: (i / 5) * window.innerWidth,
-      y: Math.random() * window.innerHeight,
-      r: 80 + Math.random() * 120,
-      vx: (Math.random() - 0.5) * 0.3,
-      vy: (Math.random() - 0.5) * 0.2,
-      hue: [150, 180, 45, 320, 170, 40][i],
-    }));
+    const spawn = () => {
+      packets.push({
+        platformIdx: Math.floor(Math.random() * PLATFORMS.length),
+        progress: 0,
+        speed: 0.008 + Math.random() * 0.009,
+        sz: 2.5 + Math.random() * 3,
+      });
+    };
 
     const draw = () => {
-      timeRef.current += 1;
-      const t = timeRef.current;
-      const W = canvas.width;
-      const H = canvas.height;
+      t += 1;
+      pktTimer++;
+      if (pktTimer >= 35) {
+        spawn();
+        if (Math.random() < 0.45) spawn();
+        pktTimer = 0;
+      }
+
+      const W = window.innerWidth;
+      const H = window.innerHeight;
+
+      // Mouse-offset center
+      const mx = mouse.current.x;
+      const my = mouse.current.y;
+      const cx = W / 2 + (mx - 0.5) * W * 0.04;
+      const cy = H / 2 + (my - 0.5) * H * 0.04;
 
       ctx.clearRect(0, 0, W, H);
 
-      // Deep background
-      const bg = ctx.createLinearGradient(0, 0, 0, H);
-      bg.addColorStop(0, "#030510");
-      bg.addColorStop(0.5, "#070d1a");
-      bg.addColorStop(1, "#030510");
+      // ── Deep space background ──
+      const bg = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(W, H) * 0.8);
+      bg.addColorStop(0, "#0a1628");
+      bg.addColorStop(0.4, "#050c18");
+      bg.addColorStop(1, "#020508");
       ctx.fillStyle = bg;
       ctx.fillRect(0, 0, W, H);
 
-      // Floating glow orbs
-      orbs.forEach((orb) => {
-        orb.x += orb.vx;
-        orb.y += orb.vy;
-        if (orb.x < -orb.r) orb.x = W + orb.r;
-        if (orb.x > W + orb.r) orb.x = -orb.r;
-        if (orb.y < -orb.r) orb.y = H + orb.r;
-        if (orb.y > H + orb.r) orb.y = -orb.r;
-
-        const pulse = 1 + 0.15 * Math.sin(t * 0.02 + orb.hue);
-        const grad = ctx.createRadialGradient(orb.x, orb.y, 0, orb.x, orb.y, orb.r * pulse);
-        grad.addColorStop(0, `hsla(${orb.hue},100%,55%,0.07)`);
-        grad.addColorStop(1, `hsla(${orb.hue},100%,55%,0)`);
-        ctx.fillStyle = grad;
+      // ── Starfield ──
+      ctx.save();
+      for (let s = 0; s < 120; s++) {
+        const sx = ((s * 137.5 + t * 0.1) % W);
+        const sy = ((s * 97.3 + t * 0.05) % H);
+        const sr = 0.4 + (s % 3) * 0.3;
+        const sa = 0.2 + 0.5 * Math.abs(Math.sin(s * 0.7 + t * 0.02));
+        ctx.fillStyle = `rgba(255,255,255,${sa})`;
         ctx.beginPath();
-        ctx.arc(orb.x, orb.y, orb.r * pulse, 0, Math.PI * 2);
+        ctx.arc(sx, sy, sr, 0, Math.PI * 2);
         ctx.fill();
-      });
-
-      // Grid lines — subtle
-      ctx.globalAlpha = 0.04;
-      ctx.strokeStyle = "#00ff88";
-      ctx.lineWidth = 1;
-      for (let x = 0; x < W; x += 80) {
-        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
       }
-      for (let y = 0; y < H; y += 80) {
-        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
-      }
-      ctx.globalAlpha = 1;
+      ctx.restore();
 
-      // Waveforms
-      waves.forEach((w, wi) => {
-        ctx.beginPath();
-        const baseY = H * w.y;
-        for (let x = 0; x <= W; x += 2) {
-          const harmonic1 = Math.sin(x * w.freq + t * w.speed + w.phase);
-          const harmonic2 = Math.sin(x * w.freq * 2.3 + t * w.speed * 1.7 + w.phase) * 0.3;
-          const harmonic3 = Math.sin(x * w.freq * 0.5 + t * w.speed * 0.6 + w.phase) * 0.5;
-          const envelope = Math.sin((x / W) * Math.PI);
-          const y = baseY + (harmonic1 + harmonic2 + harmonic3) * w.amp * envelope;
-          x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      // ── Scanlines overlay ──
+      ctx.save();
+      for (let y = 0; y < H; y += 4) {
+        ctx.fillStyle = "rgba(0,0,0,0.08)";
+        ctx.fillRect(0, y, W, 1);
+      }
+      ctx.restore();
+
+      // ── Orbit rings ──
+      const minDim = Math.min(W, H);
+      const rings = [
+        { r: minDim * 0.18, count: 4,  speed:  0.005, startIdx: 0  },
+        { r: minDim * 0.29, count: 4,  speed: -0.003, startIdx: 4  },
+        { r: minDim * 0.39, count: 4,  speed:  0.0025,startIdx: 8  },
+      ];
+
+      const platformPos: { x: number; y: number }[] = PLATFORMS.map(() => ({ x: 0, y: 0 }));
+      let pIdx = 0;
+      rings.forEach((ring) => {
+        for (let i = 0; i < ring.count; i++) {
+          const angle = (i / ring.count) * Math.PI * 2 + t * ring.speed;
+          platformPos[pIdx].x = cx + Math.cos(angle) * ring.r;
+          platformPos[pIdx].y = cy + Math.sin(angle) * ring.r;
+          pIdx++;
         }
-        // Glow stroke
-        ctx.shadowBlur = 15 + wi * 5;
-        ctx.shadowColor = wi === 0 ? "#00ff88" : wi === 1 ? "#00ffff" : "#ffbb00";
-        ctx.strokeStyle = w.color.replace("0.15", String(0.3 + 0.1 * Math.sin(t * 0.03 + wi)));
-        ctx.lineWidth = 1.5 - wi * 0.2;
-        ctx.stroke();
-        ctx.shadowBlur = 0;
       });
 
-      // Vertical frequency bars at bottom
-      ctx.globalAlpha = 0.6;
-      const barCount = 64;
+      // Ring tracks
+      rings.forEach((ring, ri) => {
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(cx, cy, ring.r, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(0,255,136,${0.06 - ri * 0.012})`;
+        ctx.lineWidth = 1;
+        ctx.setLineDash([3, 10]);
+        ctx.stroke();
+        ctx.restore();
+      });
+
+      // Center → platform lines
+      PLATFORMS.forEach((p, i) => {
+        const { x, y } = platformPos[i];
+        const grad = ctx.createLinearGradient(cx, cy, x, y);
+        grad.addColorStop(0, `${p.color}33`);
+        grad.addColorStop(1, `${p.color}05`);
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(x, y);
+        ctx.strokeStyle = grad;
+        ctx.lineWidth = 0.7;
+        ctx.stroke();
+      });
+
+      // Same-ring cross links
+      rings.forEach((ring, ri) => {
+        const start = ri === 0 ? 0 : ri === 1 ? 4 : 8;
+        for (let i = 0; i < ring.count; i++) {
+          const a = start + i;
+          const b = start + (i + 1) % ring.count;
+          ctx.beginPath();
+          ctx.moveTo(platformPos[a].x, platformPos[a].y);
+          ctx.lineTo(platformPos[b].x, platformPos[b].y);
+          ctx.strokeStyle = `${PLATFORMS[a].color}12`;
+          ctx.lineWidth = 0.5;
+          ctx.stroke();
+        }
+      });
+
+      // ── Packets ──
+      for (let i = packets.length - 1; i >= 0; i--) {
+        const pkt = packets[i];
+        pkt.progress += pkt.speed;
+        if (pkt.progress >= 1) {
+          const { x, y } = platformPos[pkt.platformIdx];
+          bursts.push({ platformIdx: pkt.platformIdx, ttl: 28, x, y });
+          packets.splice(i, 1);
+          continue;
+        }
+        const tgt = platformPos[pkt.platformIdx];
+        const px = cx + (tgt.x - cx) * pkt.progress;
+        const py = cy + (tgt.y - cy) * pkt.progress;
+        const pc = PLATFORMS[pkt.platformIdx].color;
+
+        const trail = ctx.createRadialGradient(px, py, 0, px, py, pkt.sz * 3.5);
+        trail.addColorStop(0, `${pc}dd`);
+        trail.addColorStop(1, `${pc}00`);
+        ctx.fillStyle = trail;
+        ctx.beginPath();
+        ctx.arc(px, py, pkt.sz * 3.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "#ffffff";
+        ctx.beginPath();
+        ctx.arc(px, py, pkt.sz * 0.55, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // ── Burst rings ──
+      for (let i = bursts.length - 1; i >= 0; i--) {
+        const b = bursts[i];
+        b.ttl--;
+        if (b.ttl <= 0) { bursts.splice(i, 1); continue; }
+        const progress = 1 - b.ttl / 28;
+        const pc = PLATFORMS[b.platformIdx].color;
+        const br = 14 + progress * 32;
+        const alpha = b.ttl / 28;
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, br, 0, Math.PI * 2);
+        ctx.strokeStyle = `${pc}${Math.floor(alpha * 200).toString(16).padStart(2, "0")}`;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+      }
+
+      // ── Platform nodes ──
+      PLATFORMS.forEach((p, i) => {
+        const { x, y } = platformPos[i];
+        const lit = bursts.some((b) => b.platformIdx === i);
+        const nr = 13;
+
+        // Glow
+        const gr = ctx.createRadialGradient(x, y, 0, x, y, lit ? 30 : 22);
+        gr.addColorStop(0, `${p.color}${lit ? "66" : "33"}`);
+        gr.addColorStop(1, `${p.color}00`);
+        ctx.fillStyle = gr;
+        ctx.beginPath();
+        ctx.arc(x, y, lit ? 30 : 22, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Circle
+        ctx.beginPath();
+        ctx.arc(x, y, nr, 0, Math.PI * 2);
+        ctx.fillStyle = lit ? p.color : `${p.color}1a`;
+        ctx.fill();
+        ctx.strokeStyle = `${p.color}${lit ? "ff" : "88"}`;
+        ctx.lineWidth = lit ? 2 : 1;
+        ctx.stroke();
+
+        // Icon
+        ctx.fillStyle = lit ? "#000" : `${p.color}dd`;
+        ctx.font = `bold ${p.icon.length > 1 ? "6.5" : "8.5"}px monospace`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(p.icon, x, y);
+
+        // Label
+        ctx.fillStyle = `${p.color}88`;
+        ctx.font = "6.5px monospace";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "top";
+        ctx.fillText(p.name.toUpperCase(), x, y + nr + 4);
+      });
+
+      // ── Center core ──
+      const pulse = 1 + 0.18 * Math.sin(t * 0.05);
+      const cr = minDim * 0.048 * pulse;
+
+      const corona = ctx.createRadialGradient(cx, cy, 0, cx, cy, cr * 3);
+      corona.addColorStop(0, "rgba(0,255,136,0.18)");
+      corona.addColorStop(0.5, "rgba(0,255,136,0.04)");
+      corona.addColorStop(1, "rgba(0,255,136,0)");
+      ctx.fillStyle = corona;
+      ctx.beginPath();
+      ctx.arc(cx, cy, cr * 3, 0, Math.PI * 2);
+      ctx.fill();
+
+      const cg = ctx.createRadialGradient(cx, cy, 0, cx, cy, cr);
+      cg.addColorStop(0, "#00ff88");
+      cg.addColorStop(0.6, "rgba(0,255,136,0.8)");
+      cg.addColorStop(1, "rgba(0,180,80,0.3)");
+      ctx.fillStyle = cg;
+      ctx.beginPath();
+      ctx.arc(cx, cy, cr, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.arc(cx, cy, cr, 0, Math.PI * 2);
+      ctx.strokeStyle = "rgba(0,255,136,0.95)";
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      ctx.fillStyle = "#000";
+      ctx.font = `bold ${Math.floor(cr * 0.6)}px sans-serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("⚡", cx, cy);
+
+      // ── Waveform strip at bottom ──
+      const barCount = 80;
       const barW = W / barCount;
+      ctx.globalAlpha = 0.5;
       for (let i = 0; i < barCount; i++) {
-        const phase = (i / barCount) * Math.PI * 4;
-        const h = 20 + 60 * Math.abs(
-          Math.sin(phase + t * 0.04) * Math.cos(phase * 0.7 + t * 0.025)
+        const ph = (i / barCount) * Math.PI * 6;
+        const bh = 15 + 45 * Math.abs(
+          Math.sin(ph + t * 0.035) * Math.cos(ph * 0.6 + t * 0.02)
         );
-        const hue = 150 + (i / barCount) * 50;
-        const alpha = 0.3 + 0.4 * (h / 80);
-        ctx.fillStyle = `hsla(${hue},100%,60%,${alpha})`;
-        ctx.fillRect(i * barW + 1, H - h, barW - 2, h);
+        // Green to cyan sweep — no purple
+        const hue = 160 + (i / barCount) * 30;
+        ctx.fillStyle = `hsla(${hue},100%,55%,${0.25 + 0.5 * (bh / 60)})`;
+        ctx.fillRect(i * barW + 0.5, H - bh, barW - 1, bh);
       }
       ctx.globalAlpha = 1;
 
@@ -130,393 +331,68 @@ function WaveformCanvas() {
       cancelAnimationFrame(animRef.current);
       window.removeEventListener("resize", resize);
     };
-  }, []);
+  }, [mouse]);
 
   return <canvas ref={canvasRef} className="fixed inset-0 w-full h-full" style={{ zIndex: 0 }} />;
 }
 
-// ─── Glitch Text ──────────────────────────────────────────────────────────────
+// ─── Live terminal feed ───────────────────────────────────────────────────────
 
-function GlitchText({ text, className = "" }: { text: string; className?: string }) {
-  return (
-    <span className={`glitch-text relative inline-block ${className}`} data-text={text}>
-      {text}
-    </span>
-  );
-}
-
-// ─── Animated Counter ─────────────────────────────────────────────────────────
-
-function Counter({ target, suffix = "" }: { target: number; suffix?: string }) {
-  const [val, setVal] = useState(0);
-  const ref = useRef<HTMLSpanElement>(null);
-
-  useEffect(() => {
-    const obs = new IntersectionObserver(([e]) => {
-      if (!e.isIntersecting) return;
-      obs.disconnect();
-      let start = 0;
-      const step = target / 60;
-      const tick = () => {
-        start = Math.min(start + step, target);
-        setVal(Math.floor(start));
-        if (start < target) requestAnimationFrame(tick);
-      };
-      requestAnimationFrame(tick);
-    }, { threshold: 0.5 });
-    if (ref.current) obs.observe(ref.current);
-    return () => obs.disconnect();
-  }, [target]);
-
-  return <span ref={ref}>{val.toLocaleString()}{suffix}</span>;
-}
-
-// ─── Platform Orbit ───────────────────────────────────────────────────────────
-
-const PLATFORMS = [
-  { name: "Spotify",    color: "#1DB954", icon: "S"  },
-  { name: "Apple",      color: "#FC3C44", icon: "A"  },
-  { name: "YouTube",    color: "#FF0000", icon: "YT" },
-  { name: "TikTok",     color: "#69C9D0", icon: "TT" },
-  { name: "SoundCloud", color: "#FF5500", icon: "SC" },
-  { name: "Amazon",     color: "#FF9900", icon: "AM" },
-  { name: "Deezer",     color: "#9B59B6", icon: "DZ" },
-  { name: "Tidal",      color: "#00FFFF", icon: "TD" },
-  { name: "Bandcamp",   color: "#1DA0C3", icon: "BC" },
-  { name: "Pandora",    color: "#3668FF", icon: "PN" },
-  { name: "iHeart",     color: "#C6002B", icon: "IH" },
-  { name: "Audiomack",  color: "#FFA500", icon: "AU" },
-];
-
-interface Packet {
-  platformIdx: number;
-  progress: number; // 0 = center, 1 = platform
-  speed: number;
-  size: number;
-}
-
-function PlatformOrbit({ size = 600 }: { size?: number }) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const animRef = useRef<number>(0);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d")!;
-
-    const resize = () => {
-      const dpr = window.devicePixelRatio || 1;
-      canvas.width = size * dpr;
-      canvas.height = size * dpr;
-      canvas.style.width = `${size}px`;
-      canvas.style.height = `${size}px`;
-      ctx.scale(dpr, dpr);
-    };
-    resize();
-
-    let t = 0;
-
-    // Orbit layout: 3 rings
-    const orbitConfig = [
-      { r: size * 0.22, count: 4,  speed:  0.006, startIdx: 0  },
-      { r: size * 0.34, count: 4,  speed: -0.004, startIdx: 4  },
-      { r: size * 0.44, count: 4,  speed:  0.003, startIdx: 8  },
-    ];
-
-    // Travelling data packets (center → platform)
-    const packets: Packet[] = [];
-    let packetTimer = 0;
-
-    // Burst events: platform flashes when a packet arrives
-    const bursts: { platformIdx: number; ttl: number }[] = [];
-
-    const spawnPacket = () => {
-      packets.push({
-        platformIdx: Math.floor(Math.random() * PLATFORMS.length),
-        progress: 0,
-        speed: 0.012 + Math.random() * 0.01,
-        size: 3 + Math.random() * 3,
-      });
-    };
-
-    const cx = size / 2, cy = size / 2;
-
-    // Precompute platform positions (dynamic, updated each frame)
-    const platformPos: { x: number; y: number; orbitR: number }[] = PLATFORMS.map(() => ({ x: 0, y: 0, orbitR: 0 }));
-
-    const draw = () => {
-      t += 1;
-      packetTimer += 1;
-
-      // Spawn a packet every ~40 frames
-      if (packetTimer >= 40) {
-        spawnPacket();
-        if (Math.random() < 0.4) spawnPacket(); // occasional double burst
-        packetTimer = 0;
-      }
-
-      ctx.clearRect(0, 0, size, size);
-
-      // ── Background fill ──
-      ctx.fillStyle = "rgba(3,5,16,0)";
-      ctx.fillRect(0, 0, size, size);
-
-      // ── Update platform positions ──
-      let pIdx = 0;
-      orbitConfig.forEach((ring) => {
-        for (let i = 0; i < ring.count; i++) {
-          const angle = (i / ring.count) * Math.PI * 2 + t * ring.speed;
-          platformPos[pIdx].x = cx + Math.cos(angle) * ring.r;
-          platformPos[pIdx].y = cy + Math.sin(angle) * ring.r;
-          platformPos[pIdx].orbitR = ring.r;
-          pIdx++;
-        }
-      });
-
-      // ── Orbit ring tracks ──
-      orbitConfig.forEach((ring, ri) => {
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(cx, cy, ring.r, 0, Math.PI * 2);
-        ctx.strokeStyle = `rgba(0,255,136,${0.07 - ri * 0.015})`;
-        ctx.lineWidth = 1;
-        ctx.setLineDash([4, 8]);
-        ctx.stroke();
-        ctx.restore();
-      });
-
-      // ── Connection lines: platform → platform (same ring, subtle) ──
-      orbitConfig.forEach((ring, ri) => {
-        const start = ri === 0 ? 0 : ri === 1 ? 4 : 8;
-        for (let i = 0; i < ring.count; i++) {
-          const a = start + i;
-          const b = start + (i + 1) % ring.count;
-          ctx.beginPath();
-          ctx.moveTo(platformPos[a].x, platformPos[a].y);
-          ctx.lineTo(platformPos[b].x, platformPos[b].y);
-          ctx.strokeStyle = `${PLATFORMS[a].color}18`;
-          ctx.lineWidth = 0.5;
-          ctx.stroke();
-        }
-      });
-
-      // ── Connection lines: center → each platform ──
-      PLATFORMS.forEach((p, i) => {
-        const { x, y } = platformPos[i];
-        const grad = ctx.createLinearGradient(cx, cy, x, y);
-        grad.addColorStop(0, `${p.color}44`);
-        grad.addColorStop(1, `${p.color}08`);
-        ctx.beginPath();
-        ctx.moveTo(cx, cy);
-        ctx.lineTo(x, y);
-        ctx.strokeStyle = grad;
-        ctx.lineWidth = 0.8;
-        ctx.stroke();
-      });
-
-      // ── Data packets ──
-      for (let i = packets.length - 1; i >= 0; i--) {
-        const pkt = packets[i];
-        pkt.progress += pkt.speed;
-
-        if (pkt.progress >= 1) {
-          packets.splice(i, 1);
-          bursts.push({ platformIdx: pkt.platformIdx, ttl: 30 });
-          continue;
-        }
-
-        const target = platformPos[pkt.platformIdx];
-        const px = cx + (target.x - cx) * pkt.progress;
-        const py = cy + (target.y - cy) * pkt.progress;
-        const pColor = PLATFORMS[pkt.platformIdx].color;
-
-        // Glow trail
-        const trail = ctx.createRadialGradient(px, py, 0, px, py, pkt.size * 3);
-        trail.addColorStop(0, `${pColor}cc`);
-        trail.addColorStop(1, `${pColor}00`);
-        ctx.fillStyle = trail;
-        ctx.beginPath();
-        ctx.arc(px, py, pkt.size * 3, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Core dot
-        ctx.fillStyle = "#fff";
-        ctx.beginPath();
-        ctx.arc(px, py, pkt.size * 0.6, 0, Math.PI * 2);
-        ctx.fill();
-      }
-
-      // ── Burst rings on arrival ──
-      for (let i = bursts.length - 1; i >= 0; i--) {
-        const b = bursts[i];
-        b.ttl -= 1;
-        if (b.ttl <= 0) { bursts.splice(i, 1); continue; }
-
-        const progress = 1 - b.ttl / 30;
-        const { x, y } = platformPos[b.platformIdx];
-        const pColor = PLATFORMS[b.platformIdx].color;
-        const burstR = 14 + progress * 30;
-        const alpha = b.ttl / 30;
-
-        ctx.beginPath();
-        ctx.arc(x, y, burstR, 0, Math.PI * 2);
-        ctx.strokeStyle = `${pColor}${Math.floor(alpha * 255).toString(16).padStart(2, "0")}`;
-        ctx.lineWidth = 2;
-        ctx.stroke();
-      }
-
-      // ── Platform nodes ──
-      PLATFORMS.forEach((p, i) => {
-        const { x, y } = platformPos[i];
-        const hasBurst = bursts.some((b) => b.platformIdx === i);
-        const nodeR = 14;
-
-        // Outer glow
-        const glowR = hasBurst ? 28 : 20;
-        const glow = ctx.createRadialGradient(x, y, 0, x, y, glowR);
-        glow.addColorStop(0, `${p.color}55`);
-        glow.addColorStop(1, `${p.color}00`);
-        ctx.fillStyle = glow;
-        ctx.beginPath();
-        ctx.arc(x, y, glowR, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Node circle
-        ctx.beginPath();
-        ctx.arc(x, y, nodeR, 0, Math.PI * 2);
-        ctx.fillStyle = hasBurst ? p.color : `${p.color}22`;
-        ctx.fill();
-        ctx.strokeStyle = `${p.color}aa`;
-        ctx.lineWidth = hasBurst ? 2 : 1;
-        ctx.stroke();
-
-        // Platform icon text
-        ctx.fillStyle = hasBurst ? "#000" : `${p.color}ee`;
-        ctx.font = `bold ${p.icon.length > 1 ? "7" : "9"}px monospace`;
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText(p.icon, x, y);
-
-        // Label below
-        ctx.fillStyle = `${p.color}99`;
-        ctx.font = "7px monospace";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "top";
-        ctx.fillText(p.name.toUpperCase(), x, y + nodeR + 4);
-      });
-
-      // ── Center core ──
-      const pulse = 1 + 0.2 * Math.sin(t * 0.05);
-      const coreR = size * 0.055 * pulse;
-
-      // Outer corona
-      const corona = ctx.createRadialGradient(cx, cy, 0, cx, cy, coreR * 2.5);
-      corona.addColorStop(0, "rgba(0,255,136,0.15)");
-      corona.addColorStop(0.5, "rgba(0,255,136,0.05)");
-      corona.addColorStop(1, "rgba(0,255,136,0)");
-      ctx.fillStyle = corona;
-      ctx.beginPath();
-      ctx.arc(cx, cy, coreR * 2.5, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Inner core fill
-      const coreGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, coreR);
-      coreGrad.addColorStop(0, "rgba(0,255,136,1)");
-      coreGrad.addColorStop(0.6, "rgba(0,255,136,0.7)");
-      coreGrad.addColorStop(1, "rgba(0,200,100,0.3)");
-      ctx.fillStyle = coreGrad;
-      ctx.beginPath();
-      ctx.arc(cx, cy, coreR, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Core ring
-      ctx.beginPath();
-      ctx.arc(cx, cy, coreR, 0, Math.PI * 2);
-      ctx.strokeStyle = "rgba(0,255,136,0.9)";
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
-
-      // Core label
-      ctx.fillStyle = "#000";
-      ctx.font = `bold ${Math.floor(coreR * 0.55)}px sans-serif`;
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText("⚡", cx, cy);
-
-      animRef.current = requestAnimationFrame(draw);
-    };
-
-    draw();
-    return () => cancelAnimationFrame(animRef.current);
-  }, [size]);
-
-  return (
-    <canvas
-      ref={canvasRef}
-      style={{ width: size, height: size }}
-      className="mx-auto"
-    />
-  );
-}
-
-// ─── Live Feed ────────────────────────────────────────────────────────────────
-
-const FEED_TEMPLATES: Array<(p: string, c: string) => ReactNode> = [
-  (p, c) => <><span style={{ color: c }}>{p}</span> · track deployed successfully</>,
-  (p, c) => <>distributing to <span style={{ color: c }}>{p}</span> · queued</>,
-  (p, c) => <><span style={{ color: "#00ff88" }}>✓</span> <span style={{ color: c }}>{p}</span> · live in 12s</>,
-  (p, c) => <>metadata sync → <span style={{ color: c }}>{p}</span></>,
-  (p, c) => <><span style={{ color: c }}>{p}</span> · audio fingerprint matched</>,
-  (p, c) => <>retry #1 → <span style={{ color: c }}>{p}</span> · resolved</>,
+const FEED_EVENTS: Array<(p: string, c: string) => ReactNode> = [
+  (p, c) => <><span style={{ color: "#00ff88" }}>DEPLOY</span> → <span style={{ color: c }}>{p}</span> · track live</>,
+  (p, c) => <><span style={{ color: "#00ffff" }}>SYNC</span> → metadata pushed to <span style={{ color: c }}>{p}</span></>,
+  (p, c) => <><span style={{ color: "#ffbb00" }}>QUEUE</span> → <span style={{ color: c }}>{p}</span> · processing audio</>,
+  (p, c) => <><span style={{ color: "#00ff88" }}>ACK</span> → <span style={{ color: c }}>{p}</span> · fingerprint matched</>,
+  (p, c) => <><span style={{ color: "#FF5500" }}>RETRY</span> → <span style={{ color: c }}>{p}</span> · resolved in 2.1s</>,
+  (p, c) => <><span style={{ color: "#00ff88" }}>LIVE</span> → <span style={{ color: c }}>{p}</span> · now streaming globally</>,
 ];
 
 function LiveFeed() {
-  const [lines, setLines] = useState<{ id: number; el: ReactNode }[]>([]);
+  const [lines, setLines] = useState<{ id: number; el: ReactNode; ts: string }[]>([]);
   const idRef = useRef(0);
 
   useEffect(() => {
     const spawn = () => {
       const p = PLATFORMS[Math.floor(Math.random() * PLATFORMS.length)];
-      const tmpl = FEED_TEMPLATES[Math.floor(Math.random() * FEED_TEMPLATES.length)];
-      const id = idRef.current++;
-      setLines((prev) => [{ id, el: tmpl(p.name, p.color) }, ...prev].slice(0, 5));
+      const tmpl = FEED_EVENTS[Math.floor(Math.random() * FEED_EVENTS.length)];
+      const now = new Date();
+      const ts = `${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}:${String(now.getSeconds()).padStart(2,"0")}`;
+      setLines((prev) => [{ id: idRef.current++, el: tmpl(p.name, p.color), ts }, ...prev].slice(0, 6));
     };
     spawn();
-    const iv = setInterval(spawn, 1800);
+    const iv = setInterval(spawn, 1600);
     return () => clearInterval(iv);
   }, []);
 
   return (
     <div
-      className="mx-auto mt-2 rounded-lg overflow-hidden"
-      style={{
-        maxWidth: 520,
-        background: "rgba(0,0,0,0.5)",
-        border: "1px solid rgba(0,255,136,0.1)",
-        fontFamily: "monospace",
-      }}
+      className="rounded-lg overflow-hidden"
+      style={{ background: "rgba(2,5,12,0.85)", border: "1px solid rgba(0,255,136,0.12)", backdropFilter: "blur(12px)" }}
     >
-      {/* Terminal top bar */}
-      <div className="flex items-center gap-2 px-4 py-2" style={{ borderBottom: "1px solid rgba(0,255,136,0.08)", background: "rgba(0,255,136,0.03)" }}>
-        <span className="w-2.5 h-2.5 rounded-full bg-red-500/70" />
-        <span className="w-2.5 h-2.5 rounded-full bg-yellow-500/70" />
-        <span className="w-2.5 h-2.5 rounded-full bg-green-500/70" />
-        <span className="ml-2 text-xs text-gray-500 tracking-widest">distrobuzz · distribution log · live</span>
-        <span className="ml-auto flex items-center gap-1.5">
+      <div
+        className="flex items-center gap-2 px-4 py-2.5"
+        style={{ borderBottom: "1px solid rgba(0,255,136,0.08)", background: "rgba(0,255,136,0.03)" }}
+      >
+        <div className="flex gap-1.5">
+          <span className="w-2.5 h-2.5 rounded-full" style={{ background: "#FF5F57" }} />
+          <span className="w-2.5 h-2.5 rounded-full" style={{ background: "#FEBC2E" }} />
+          <span className="w-2.5 h-2.5 rounded-full" style={{ background: "#28C840" }} />
+        </div>
+        <span className="ml-3 text-xs text-gray-500 font-mono tracking-widest">distrobuzz · engine · live</span>
+        <div className="ml-auto flex items-center gap-1.5">
           <span className="w-1.5 h-1.5 rounded-full bg-[#00ff88] animate-pulse" />
-          <span className="text-[#00ff88] text-xs">LIVE</span>
-        </span>
+          <span className="text-[10px] font-mono text-[#00ff88] tracking-widest">LIVE</span>
+        </div>
       </div>
-      {/* Log lines */}
-      <div className="px-4 py-3 space-y-1.5" style={{ minHeight: 130 }}>
+      <div className="px-4 py-3 space-y-2" style={{ minHeight: 140 }}>
         {lines.map((line, idx) => (
           <div
             key={line.id}
-            className="text-xs text-gray-400 transition-all duration-500"
-            style={{ opacity: 1 - idx * 0.15 }}
+            className="flex items-center gap-3 text-xs font-mono transition-opacity duration-500"
+            style={{ opacity: Math.max(0.15, 1 - idx * 0.14) }}
           >
-            <span className="text-gray-600 select-none">{String(new Date().getSeconds()).padStart(2, "0")}:{String(new Date().getMilliseconds()).padStart(3, "0")} › </span>
-            {line.el}
+            <span className="text-gray-600 flex-shrink-0 tabular-nums">{line.ts}</span>
+            <span className="text-gray-300">{line.el}</span>
           </div>
         ))}
       </div>
@@ -524,347 +400,318 @@ function LiveFeed() {
   );
 }
 
-// ─── Scroll reveal hook ───────────────────────────────────────────────────────
+// ─── Scroll reveal ────────────────────────────────────────────────────────────
 
-function useReveal(threshold = 0.15) {
-  const [visible, setVisible] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+function useReveal(threshold = 0.1) {
+  const [v, setV] = useState(false);
+  const ref = useRef<HTMLElement>(null);
   useEffect(() => {
     const obs = new IntersectionObserver(([e]) => {
-      if (e.isIntersecting) { setVisible(true); obs.disconnect(); }
+      if (e.isIntersecting) { setV(true); obs.disconnect(); }
     }, { threshold });
     if (ref.current) obs.observe(ref.current);
     return () => obs.disconnect();
   }, [threshold]);
-  return { ref, visible };
+  return { ref, v };
 }
 
-// ─── Main Landing Page ────────────────────────────────────────────────────────
+// ─── Counter ─────────────────────────────────────────────────────────────────
+
+function Counter({ target, suffix = "" }: { target: number; suffix?: string }) {
+  const [val, setVal] = useState(0);
+  const ref = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    const obs = new IntersectionObserver(([e]) => {
+      if (!e.isIntersecting) return;
+      obs.disconnect();
+      let n = 0;
+      const step = target / 55;
+      const tick = () => {
+        n = Math.min(n + step, target);
+        setVal(Math.floor(n));
+        if (n < target) requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    }, { threshold: 0.5 });
+    if (ref.current) obs.observe(ref.current);
+    return () => obs.disconnect();
+  }, [target]);
+  return <span ref={ref}>{val.toLocaleString()}{suffix}</span>;
+}
+
+// ─── Main ─────────────────────────────────────────────────────────────────────
 
 export default function LandingPage() {
   const [, setLocation] = useLocation();
   const [scrollY, setScrollY] = useState(0);
-  const { ref: statsRef, visible: statsVisible } = useReveal();
-  const { ref: featRef, visible: featVisible } = useReveal();
-  const { ref: orbitRef, visible: orbitVisible } = useReveal();
-  const { ref: pricingRef, visible: pricingVisible } = useReveal();
+  const mouse = useMouse();
+
+  const stats = useReveal();
+  const feat = useReveal();
+  const pricing = useReveal();
 
   useEffect(() => {
-    const onScroll = () => setScrollY(window.scrollY);
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    const fn = () => setScrollY(window.scrollY);
+    window.addEventListener("scroll", fn, { passive: true });
+    return () => window.removeEventListener("scroll", fn);
   }, []);
 
-  const navOpacity = Math.min(scrollY / 100, 1);
+  const navAlpha = Math.min(scrollY / 80, 1);
 
   return (
-    <div className="relative text-white overflow-x-hidden" style={{ background: "#030510" }}>
-      <WaveformCanvas />
+    <div className="relative text-white overflow-x-hidden" style={{ background: "#020508" }}>
+      {/* Full-screen living canvas background */}
+      <HeroCanvas mouse={mouse} />
 
-      {/* NAV */}
+      {/* ── NAV ── */}
       <nav
         className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4 transition-all duration-300"
-        style={{ background: `rgba(3,5,16,${navOpacity * 0.95})`, borderBottom: `1px solid rgba(0,255,136,${navOpacity * 0.15})` }}
+        style={{
+          background: `rgba(2,5,12,${navAlpha * 0.92})`,
+          borderBottom: `1px solid rgba(0,255,136,${navAlpha * 0.12})`,
+          backdropFilter: navAlpha > 0.1 ? "blur(16px)" : "none",
+        }}
       >
-        <div className="flex items-center gap-2 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
-          <Zap className="w-5 h-5 text-[#00ff88]" />
-          <span className="font-black text-lg tracking-tight" style={{ letterSpacing: "-0.02em" }}>DISTRO BUZZ</span>
+        <div
+          className="flex items-center gap-2 cursor-pointer"
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+        >
+          <Zap className="w-5 h-5" style={{ color: "#00ff88" }} />
+          <span className="font-black text-base tracking-[-0.04em]">DISTRO BUZZ</span>
         </div>
         <div className="flex items-center gap-3">
           <button
             onClick={() => setLocation("/login")}
-            className="text-sm text-gray-400 hover:text-white px-4 py-2 transition-colors"
+            className="text-sm text-gray-400 hover:text-white px-4 py-2 transition-colors font-mono"
           >
-            Sign in
+            SIGN IN
           </button>
           <button
             onClick={() => setLocation("/signup")}
-            className="text-sm font-bold px-5 py-2 rounded transition-all hover:scale-105 active:scale-95"
-            style={{ background: "#00ff88", color: "#000", boxShadow: "0 0 20px rgba(0,255,136,0.4)" }}
+            className="text-sm font-black px-5 py-2 rounded transition-all hover:scale-105 active:scale-95"
+            style={{ background: "#00ff88", color: "#000", boxShadow: "0 0 18px rgba(0,255,136,0.45)", letterSpacing: "-0.02em" }}
           >
-            Get Started
+            GET STARTED
           </button>
         </div>
       </nav>
 
-      {/* HERO ── full viewport */}
-      <section className="relative z-10 min-h-screen flex flex-col items-center justify-center px-6 text-center" style={{ paddingTop: "80px" }}>
-        <div className="animate-hero-in max-w-5xl mx-auto">
-          {/* eyebrow */}
+      {/* ── HERO — orbit is the background, text floats over ── */}
+      <section className="relative z-10 min-h-screen flex flex-col items-center justify-center px-6" style={{ paddingTop: 80 }}>
+        {/* Text block — centered, minimal, floats over canvas */}
+        <div className="text-center max-w-3xl mx-auto animate-hero-in">
           <div
-            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-mono tracking-widest mb-8 uppercase"
-            style={{ border: "1px solid rgba(0,255,136,0.3)", background: "rgba(0,255,136,0.05)", color: "#00ff88" }}
+            className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[11px] font-mono tracking-widest mb-8 uppercase"
+            style={{ border: "1px solid rgba(0,255,136,0.25)", background: "rgba(0,255,136,0.04)", color: "#00ff88" }}
           >
             <span className="w-1.5 h-1.5 rounded-full bg-[#00ff88] animate-pulse" />
-            Autonomous Distribution Engine
+            Autonomous Distribution Engine · Active
           </div>
 
-          {/* headline */}
-          <h1 className="font-black leading-none mb-6" style={{ fontSize: "clamp(3rem, 10vw, 7rem)", letterSpacing: "-0.04em" }}>
-            <span className="block text-white">Drop Once.</span>
+          <h1
+            className="font-black leading-none mb-5"
+            style={{ fontSize: "clamp(3.2rem, 9vw, 6.5rem)", letterSpacing: "-0.05em" }}
+          >
+            <span className="block">Drop Once.</span>
             <span
               className="block"
               style={{
-                background: "linear-gradient(90deg, #00ff88, #00ffff, #ffbb00, #00ff88)",
+                background: "linear-gradient(90deg, #00ff88 0%, #00ffff 40%, #ffbb00 70%, #00ff88 100%)",
                 backgroundSize: "200% auto",
                 WebkitBackgroundClip: "text",
                 WebkitTextFillColor: "transparent",
                 backgroundClip: "text",
-                animation: "gradient-shift 4s linear infinite",
+                animation: "gradient-shift 5s linear infinite",
               }}
             >
               Hit Everywhere.
             </span>
           </h1>
 
-          {/* sub */}
-          <p className="text-gray-400 max-w-2xl mx-auto mb-10 leading-relaxed" style={{ fontSize: "clamp(1rem, 2vw, 1.25rem)" }}>
-            Upload to SoundCloud. We detonate it across <strong className="text-white">50+ platforms</strong> in real-time.
-            No label. No middleman. No ceiling.
+          <p className="text-gray-400 max-w-xl mx-auto mb-8 leading-relaxed" style={{ fontSize: "clamp(0.95rem, 1.8vw, 1.15rem)" }}>
+            One upload detonates across{" "}
+            <span className="text-white font-semibold">50+ platforms simultaneously</span>.
+            No label. No gatekeepers. No ceiling.
           </p>
 
-          {/* CTA */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <button
               onClick={() => setLocation("/signup")}
-              className="group flex items-center justify-center gap-3 font-bold px-8 py-4 rounded-lg text-black transition-all hover:scale-105 active:scale-95"
-              style={{ background: "#00ff88", boxShadow: "0 0 30px rgba(0,255,136,0.5)", fontSize: "1.05rem" }}
+              className="group inline-flex items-center justify-center gap-2 font-black px-8 py-4 rounded-lg text-black transition-all hover:scale-105 active:scale-95"
+              style={{ background: "#00ff88", boxShadow: "0 0 32px rgba(0,255,136,0.55)", fontSize: "1rem", letterSpacing: "-0.02em" }}
             >
-              Start Free Trial
+              START FREE TRIAL
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </button>
             <button
               onClick={() => setLocation("/platforms")}
-              className="flex items-center justify-center gap-2 font-semibold px-8 py-4 rounded-lg transition-all hover:scale-105"
-              style={{ border: "1px solid rgba(0,255,255,0.3)", color: "#00ffff", background: "rgba(0,255,255,0.05)" }}
+              className="inline-flex items-center justify-center font-bold px-8 py-4 rounded-lg transition-all hover:scale-105"
+              style={{ border: "1px solid rgba(0,255,255,0.25)", color: "#00ffff", background: "rgba(0,255,255,0.04)", fontSize: "0.9rem" }}
             >
-              See All Platforms
+              SEE ALL PLATFORMS
             </button>
           </div>
 
-          <p className="text-gray-600 text-xs mt-6 font-mono tracking-wider">NO CARD REQUIRED · 14-DAY TRIAL · CANCEL ANYTIME</p>
+          <p className="text-gray-600 text-[10px] mt-5 font-mono tracking-[0.2em]">
+            NO CARD REQUIRED · 14-DAY TRIAL · CANCEL ANYTIME
+          </p>
         </div>
 
-        {/* scroll indicator */}
-        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 animate-bounce-slow">
-          <span className="text-gray-600 text-xs font-mono tracking-widest">SCROLL</span>
-          <div className="w-px h-12 bg-gradient-to-b from-[#00ff88] to-transparent" />
+        {/* Terminal feed — anchored bottom center over the orbit */}
+        <div className="w-full max-w-lg mx-auto mt-16">
+          <LiveFeed />
+        </div>
+
+        {/* Scroll cue */}
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1.5 animate-bounce-slow">
+          <div className="w-px h-10 bg-gradient-to-b from-[#00ff88] to-transparent" />
         </div>
       </section>
 
-      {/* STATS */}
+      {/* ── STATS — thin band ── */}
       <section
-        ref={statsRef}
-        className={`relative z-10 py-24 px-6 transition-all duration-1000 ${statsVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}
+        ref={stats.ref as React.RefObject<HTMLElement>}
+        className={`relative z-10 py-16 px-6 transition-all duration-700 ${stats.v ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
+        style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(20px)", borderTop: "1px solid rgba(0,255,136,0.07)", borderBottom: "1px solid rgba(0,255,136,0.07)" }}
       >
-        <div className="max-w-4xl mx-auto grid grid-cols-3 gap-0 divide-x" style={{ borderColor: "rgba(0,255,136,0.15)" }}>
+        <div className="max-w-4xl mx-auto grid grid-cols-3 divide-x" style={{ borderColor: "rgba(0,255,136,0.12)" }}>
           {[
-            { n: 50000, suffix: "+", label: "Independent Artists" },
-            { n: 2000000, suffix: "+", label: "Tracks Distributed" },
-            { n: 50, suffix: "+", label: "Platforms Reached" },
-          ].map((s, i) => (
-            <div key={i} className="text-center py-8 px-4" style={{ borderColor: "rgba(0,255,136,0.15)" }}>
+            { n: 50000, s: "+", label: "Artists", color: "#00ff88" },
+            { n: 2000000, s: "+", label: "Tracks Sent", color: "#00ffff" },
+            { n: 50, s: "+", label: "Platforms", color: "#ffbb00" },
+          ].map((stat, i) => (
+            <div key={i} className="text-center px-4 py-4" style={{ borderColor: "rgba(0,255,136,0.12)" }}>
               <div
-                className="font-black mb-2"
-                style={{ fontSize: "clamp(2rem, 5vw, 3.5rem)", color: i === 0 ? "#00ff88" : i === 1 ? "#00ffff" : "#ffbb00", letterSpacing: "-0.03em" }}
+                className="font-black mb-1 tabular-nums"
+                style={{ fontSize: "clamp(1.8rem, 4vw, 3rem)", letterSpacing: "-0.04em", color: stat.color }}
               >
-                <Counter target={s.n} suffix={s.suffix} />
+                <Counter target={stat.n} suffix={stat.s} />
               </div>
-              <div className="text-gray-500 text-sm uppercase tracking-widest font-mono">{s.label}</div>
+              <div className="text-gray-500 text-xs font-mono tracking-[0.15em] uppercase">{stat.label}</div>
             </div>
           ))}
         </div>
       </section>
 
-      {/* ORBIT — full-screen showcase */}
+      {/* ── FEATURES — control room aesthetic ── */}
       <section
-        ref={orbitRef}
-        className={`relative z-10 py-20 px-6 transition-all duration-1000 ${orbitVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}
-        style={{ borderTop: "1px solid rgba(0,255,136,0.06)", borderBottom: "1px solid rgba(0,255,136,0.06)" }}
-      >
-        {/* Section label */}
-        <div className="text-center mb-4">
-          <span
-            className="inline-block px-4 py-1 text-xs font-mono tracking-widest uppercase rounded-full"
-            style={{ border: "1px solid rgba(0,255,136,0.2)", color: "#00ff88", background: "rgba(0,255,136,0.04)" }}
-          >
-            Live Distribution Network
-          </span>
-        </div>
-
-        <div className="max-w-7xl mx-auto">
-          {/* Heading */}
-          <div className="text-center mb-2">
-            <h2 className="font-black" style={{ fontSize: "clamp(2rem, 5vw, 3.5rem)", letterSpacing: "-0.03em" }}>
-              Watch your music travel.
-            </h2>
-            <p className="text-gray-500 mt-2 text-sm">Real-time propagation — every upload, every platform, simultaneously.</p>
-          </div>
-
-          {/* Orbit canvas — big */}
-          <div className="flex justify-center items-center py-4">
-            <div className="relative">
-              {/* Ambient glow behind canvas */}
-              <div
-                className="absolute inset-0 rounded-full pointer-events-none"
-                style={{
-                  background: "radial-gradient(ellipse at center, rgba(0,255,136,0.06) 0%, transparent 70%)",
-                  transform: "scale(1.3)",
-                }}
-              />
-              <PlatformOrbit size={580} />
-            </div>
-          </div>
-
-          {/* Live event feed below orbit */}
-          <LiveFeed />
-
-          {/* CTA row */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-8">
-            <div className="flex gap-6 text-sm text-gray-500 font-mono">
-              {[
-                { label: "Platforms", val: "50+", color: "#00ff88" },
-                { label: "Avg Deploy", val: "<2min", color: "#00ffff" },
-                { label: "Uptime", val: "99.9%", color: "#ffbb00" },
-              ].map((s, i) => (
-                <div key={i} className="text-center">
-                  <div className="font-black text-lg" style={{ color: s.color }}>{s.val}</div>
-                  <div className="text-xs tracking-widest uppercase">{s.label}</div>
-                </div>
-              ))}
-            </div>
-            <button
-              onClick={() => setLocation("/signup")}
-              className="font-bold px-8 py-3 rounded-lg text-black transition-all hover:scale-105"
-              style={{ background: "#00ff88", boxShadow: "0 0 24px rgba(0,255,136,0.35)" }}
-            >
-              Start Distributing Free
-            </button>
-          </div>
-        </div>
-      </section>
-
-      {/* FEATURES GRID */}
-      <section
-        ref={featRef}
-        className={`relative z-10 py-24 px-6 transition-all duration-1000 ${featVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}
+        ref={feat.ref as React.RefObject<HTMLElement>}
+        className={`relative z-10 py-24 px-6 transition-all duration-700 ${feat.v ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
       >
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="font-black mb-4" style={{ fontSize: "clamp(2rem, 5vw, 3rem)", letterSpacing: "-0.03em" }}>
-              Built different.
+          <div className="mb-12">
+            <p className="text-[10px] font-mono text-[#00ff88] tracking-[0.3em] uppercase mb-3">System Capabilities</p>
+            <h2 className="font-black" style={{ fontSize: "clamp(2rem, 5vw, 3.2rem)", letterSpacing: "-0.04em" }}>
+              Built for artists<br />who move fast.
             </h2>
-            <p className="text-gray-500 font-mono text-sm tracking-widest uppercase">Not your average distro</p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-px" style={{ background: "rgba(0,255,136,0.05)" }}>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-px" style={{ background: "rgba(0,255,136,0.04)" }}>
             {[
-              { n: "01", title: "50+ Platforms", body: "Spotify, Apple, YouTube, TikTok, SoundCloud, Bandcamp, Amazon, Deezer, Tidal and more. All at once." },
-              { n: "02", title: "Real-Time Dashboard", body: "Every distribution job. Every retry. Every platform. Live status, zero lag." },
-              { n: "03", title: "Smart Retry Engine", body: "7-layer fallback logic. If a platform rejects your track, we fight back automatically." },
-              { n: "04", title: "100% Data Ownership", body: "Your music, your data, your rights. We hold nothing. No lock-in, ever." },
-              { n: "05", title: "AI Optimization", body: "Mood detection, genre tagging, description generation. Max algorithmic visibility." },
-              { n: "06", title: "Open Source Core", body: "Full transparency. Audit the engine, fork it, contribute to it. Community-first." },
+              { n: "01", title: "50+ Platforms", body: "Spotify, Apple, YouTube, TikTok, SoundCloud, Bandcamp, Amazon, Deezer, Tidal — all simultaneously.", c: "#00ff88" },
+              { n: "02", title: "Real-Time Status", body: "Watch every job, every platform, every retry. Live. No polling, no guessing.", c: "#00ffff" },
+              { n: "03", title: "Smart Retry Engine", body: "7-layer fallback logic. Platforms reject? We fight back and keep retrying.", c: "#ffbb00" },
+              { n: "04", title: "100% Ownership", body: "Your music, your data, your rights. We hold nothing. Zero vendor lock-in.", c: "#00ff88" },
+              { n: "05", title: "AI Optimization", body: "Mood detection, genre tagging, auto-description. Maximum algorithmic reach.", c: "#00ffff" },
+              { n: "06", title: "Open Source Core", body: "Full transparency. Audit the engine, fork it, run it yourself. Community-first.", c: "#ffbb00" },
             ].map((f, i) => (
               <div
                 key={i}
-                className="group p-8 transition-all duration-300 hover:bg-white/[0.02] cursor-default"
-                style={{ background: "rgba(3,5,16,0.8)" }}
+                className="group p-8 cursor-default transition-all duration-200 hover:bg-white/[0.025]"
+                style={{ background: "rgba(2,5,12,0.9)" }}
               >
-                <div
-                  className="font-mono text-xs mb-4 font-bold"
-                  style={{ color: i % 3 === 0 ? "#00ff88" : i % 3 === 1 ? "#00ffff" : "#ffbb00" }}
+                <div className="font-mono text-[10px] font-bold tracking-widest mb-4" style={{ color: f.c }}>{f.n}</div>
+                <h3
+                  className="font-bold text-lg mb-2 transition-colors duration-200"
+                  style={{ color: "#e8e8e8" }}
                 >
-                  {f.n}
-                </div>
-                <h3 className="font-bold text-lg mb-2 text-white group-hover:text-[#00ff88] transition-colors">{f.title}</h3>
+                  {f.title}
+                </h3>
                 <p className="text-gray-500 text-sm leading-relaxed">{f.body}</p>
+                <div
+                  className="mt-4 h-px w-0 group-hover:w-full transition-all duration-300 rounded"
+                  style={{ background: f.c }}
+                />
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* PRICING */}
+      {/* ── PRICING ── */}
       <section
-        ref={pricingRef}
-        className={`relative z-10 py-24 px-6 transition-all duration-1000 ${pricingVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}
+        ref={pricing.ref as React.RefObject<HTMLElement>}
+        className={`relative z-10 py-24 px-6 transition-all duration-700 ${pricing.v ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
+        style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(20px)" }}
       >
         <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="font-black mb-4" style={{ fontSize: "clamp(2rem, 5vw, 3rem)", letterSpacing: "-0.03em" }}>
-              Transparent pricing.
+          <div className="mb-12">
+            <p className="text-[10px] font-mono text-[#00ff88] tracking-[0.3em] uppercase mb-3">Pricing</p>
+            <h2 className="font-black" style={{ fontSize: "clamp(2rem, 5vw, 3.2rem)", letterSpacing: "-0.04em" }}>
+              Transparent.<br />No cuts. No BS.
             </h2>
-            <p className="text-gray-500">No hidden fees. No royalty cuts. Ever.</p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-3 gap-4">
             {[
               {
-                name: "STARTER",
-                price: "$9.99",
-                period: "/ month",
+                name: "STARTER", price: "$9.99", period: "/mo",
                 desc: "Solo artists, just launching",
                 features: ["1 artist profile", "Basic distribution", "50+ platforms", "Email support"],
-                accent: "#00ffff",
+                accent: "#00ffff", featured: false,
               },
               {
-                name: "PRO",
-                price: "$24.99",
-                period: "/ month",
+                name: "PRO", price: "$24.99", period: "/mo",
                 desc: "Serious musicians scaling up",
                 features: ["Unlimited distribution", "AI metadata", "Video generation", "Priority support", "Analytics"],
-                accent: "#00ff88",
-                featured: true,
+                accent: "#00ff88", featured: true,
               },
               {
-                name: "LABEL",
-                price: "$99.99",
-                period: "/ month",
+                name: "LABEL", price: "$99.99", period: "/mo",
                 desc: "Labels and artist teams",
                 features: ["Multiple artists", "API access", "White-label", "Ad placement", "Dedicated support"],
-                accent: "#ffbb00",
+                accent: "#ffbb00", featured: false,
               },
             ].map((tier, i) => (
               <div
                 key={i}
-                className={`relative p-8 rounded-lg transition-all duration-300 hover:-translate-y-1 ${tier.featured ? "scale-105" : ""}`}
+                className={`relative p-7 rounded-lg transition-all duration-300 hover:-translate-y-1 ${tier.featured ? "scale-[1.03]" : ""}`}
                 style={{
-                  background: tier.featured ? `rgba(0,255,136,0.05)` : "rgba(255,255,255,0.02)",
-                  border: `1px solid ${tier.featured ? "rgba(0,255,136,0.4)" : "rgba(255,255,255,0.06)"}`,
-                  boxShadow: tier.featured ? "0 0 40px rgba(0,255,136,0.1)" : "none",
+                  background: tier.featured ? "rgba(0,255,136,0.05)" : "rgba(255,255,255,0.02)",
+                  border: `1px solid ${tier.featured ? "rgba(0,255,136,0.35)" : "rgba(255,255,255,0.05)"}`,
+                  boxShadow: tier.featured ? "0 0 40px rgba(0,255,136,0.08)" : "none",
                 }}
               >
                 {tier.featured && (
                   <div
-                    className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-xs font-black tracking-widest"
+                    className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full text-[10px] font-black tracking-widest"
                     style={{ background: "#00ff88", color: "#000" }}
                   >
                     MOST POPULAR
                   </div>
                 )}
-                <div className="font-mono text-xs mb-3 font-bold tracking-widest" style={{ color: tier.accent }}>
+                <div className="font-mono text-[10px] font-bold tracking-[0.2em] mb-3" style={{ color: tier.accent }}>
                   {tier.name}
                 </div>
-                <div className="mb-1">
-                  <span className="font-black" style={{ fontSize: "2.5rem", letterSpacing: "-0.03em" }}>{tier.price}</span>
-                  <span className="text-gray-500 text-sm ml-1">{tier.period}</span>
+                <div className="mb-1 flex items-end gap-1">
+                  <span className="font-black" style={{ fontSize: "2.4rem", letterSpacing: "-0.04em", lineHeight: 1 }}>{tier.price}</span>
+                  <span className="text-gray-500 text-sm pb-1">{tier.period}</span>
                 </div>
-                <p className="text-gray-500 text-sm mb-6">{tier.desc}</p>
-                <ul className="space-y-3 mb-8">
+                <p className="text-gray-500 text-sm mb-5">{tier.desc}</p>
+                <ul className="space-y-2.5 mb-7">
                   {tier.features.map((f, j) => (
                     <li key={j} className="flex items-center gap-2 text-sm text-gray-300">
-                      <span style={{ color: tier.accent }}>→</span> {f}
+                      <span style={{ color: tier.accent }} className="text-xs">→</span> {f}
                     </li>
                   ))}
                 </ul>
                 <button
                   onClick={() => setLocation("/signup")}
-                  className="w-full py-3 rounded font-bold text-sm transition-all hover:scale-105 active:scale-95"
+                  className="w-full py-2.5 rounded font-bold text-sm transition-all hover:scale-105 active:scale-95"
                   style={{
                     background: tier.featured ? tier.accent : "transparent",
                     color: tier.featured ? "#000" : tier.accent,
-                    border: tier.featured ? "none" : `1px solid ${tier.accent}`,
+                    border: tier.featured ? "none" : `1px solid ${tier.accent}40`,
                   }}
                 >
                   Get Started
@@ -875,42 +722,52 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* FINAL CTA */}
-      <section className="relative z-10 py-32 px-6 text-center" style={{ borderTop: "1px solid rgba(0,255,136,0.08)" }}>
-        <div className="max-w-3xl mx-auto space-y-8">
-          <h2 className="font-black" style={{ fontSize: "clamp(2.5rem, 7vw, 5rem)", letterSpacing: "-0.04em", lineHeight: 1 }}>
-            Your music deserves<br />
+      {/* ── FINAL CTA ── */}
+      <section className="relative z-10 py-32 px-6 text-center">
+        <div className="max-w-2xl mx-auto">
+          <p className="text-[10px] font-mono text-[#00ff88] tracking-[0.3em] uppercase mb-6">Ready?</p>
+          <h2
+            className="font-black mb-6"
+            style={{ fontSize: "clamp(2.5rem, 7vw, 5rem)", letterSpacing: "-0.05em", lineHeight: 0.95 }}
+          >
+            Your music<br />deserves{" "}
             <span style={{ color: "#00ff88" }}>every stage.</span>
           </h2>
-          <p className="text-gray-400 text-lg">
-            Thousands of independent artists already fire with us. Join them.
+          <p className="text-gray-400 mb-8">
+            Thousands of independent artists fire with us. Join them.
           </p>
           <button
             onClick={() => setLocation("/signup")}
-            className="inline-flex items-center gap-3 font-black px-10 py-5 rounded-lg text-black text-lg transition-all hover:scale-105 active:scale-95"
-            style={{ background: "#00ff88", boxShadow: "0 0 50px rgba(0,255,136,0.4)" }}
+            className="inline-flex items-center gap-3 font-black px-10 py-5 rounded-lg text-black text-base transition-all hover:scale-105 active:scale-95"
+            style={{ background: "#00ff88", boxShadow: "0 0 50px rgba(0,255,136,0.45)", letterSpacing: "-0.02em" }}
           >
-            Launch Your Music
-            <ArrowRight className="w-6 h-6" />
+            LAUNCH YOUR MUSIC
+            <ArrowRight className="w-5 h-5" />
           </button>
-          <p className="text-gray-600 font-mono text-xs tracking-widest">FREE TRIAL · NO CREDIT CARD · CANCEL ANYTIME</p>
+          <p className="text-gray-600 font-mono text-[10px] mt-5 tracking-[0.2em]">FREE TRIAL · NO CREDIT CARD · CANCEL ANYTIME</p>
         </div>
       </section>
 
-      {/* FOOTER */}
-      <footer className="relative z-10 py-12 px-6" style={{ borderTop: "1px solid rgba(255,255,255,0.04)" }}>
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+      {/* ── FOOTER ── */}
+      <footer className="relative z-10 py-10 px-6" style={{ borderTop: "1px solid rgba(255,255,255,0.04)" }}>
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <Zap className="w-4 h-4 text-[#00ff88]" />
-            <span className="font-black text-sm tracking-tight">DISTRO BUZZ</span>
+            <Zap className="w-4 h-4" style={{ color: "#00ff88" }} />
+            <span className="font-black text-sm tracking-[-0.04em]">DISTRO BUZZ</span>
           </div>
-          <div className="flex gap-8 text-sm text-gray-500">
-            <button onClick={() => setLocation("/platforms")} className="hover:text-white transition-colors">Platforms</button>
-            <button onClick={() => setLocation("/api-docs")} className="hover:text-white transition-colors">API Docs</button>
-            <button onClick={() => setLocation("/pricing")} className="hover:text-white transition-colors">Pricing</button>
-            <button onClick={() => setLocation("/signup")} className="hover:text-white transition-colors">Sign Up</button>
+          <div className="flex gap-6 text-xs text-gray-500 font-mono tracking-widest">
+            {[
+              { label: "PLATFORMS", path: "/platforms" },
+              { label: "API DOCS",  path: "/api-docs"  },
+              { label: "PRICING",   path: "/pricing"   },
+              { label: "SIGN UP",   path: "/signup"    },
+            ].map((l) => (
+              <button key={l.path} onClick={() => setLocation(l.path)} className="hover:text-white transition-colors">
+                {l.label}
+              </button>
+            ))}
           </div>
-          <p className="text-gray-600 text-xs font-mono">© 2026 DISTRO BUZZ. BUILT FOR ARTISTS.</p>
+          <p className="text-gray-600 text-[10px] font-mono tracking-widest">© 2026 DISTRO BUZZ</p>
         </div>
       </footer>
     </div>
