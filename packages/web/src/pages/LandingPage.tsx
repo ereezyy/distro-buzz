@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, type ReactNode } from "react";
 import { ArrowRight, Zap } from "lucide-react";
 import { useLocation } from "wouter";
 
@@ -174,17 +174,28 @@ function Counter({ target, suffix = "" }: { target: number; suffix?: string }) {
 // ─── Platform Orbit ───────────────────────────────────────────────────────────
 
 const PLATFORMS = [
-  { name: "Spotify", color: "#1DB954" },
-  { name: "Apple", color: "#FC3C44" },
-  { name: "YouTube", color: "#FF0000" },
-  { name: "TikTok", color: "#69C9D0" },
-  { name: "SoundCloud", color: "#FF5500" },
-  { name: "Amazon", color: "#FF9900" },
-  { name: "Deezer", color: "#A238FF" },
-  { name: "Tidal", color: "#00FFFF" },
+  { name: "Spotify",    color: "#1DB954", icon: "S"  },
+  { name: "Apple",      color: "#FC3C44", icon: "A"  },
+  { name: "YouTube",    color: "#FF0000", icon: "YT" },
+  { name: "TikTok",     color: "#69C9D0", icon: "TT" },
+  { name: "SoundCloud", color: "#FF5500", icon: "SC" },
+  { name: "Amazon",     color: "#FF9900", icon: "AM" },
+  { name: "Deezer",     color: "#9B59B6", icon: "DZ" },
+  { name: "Tidal",      color: "#00FFFF", icon: "TD" },
+  { name: "Bandcamp",   color: "#1DA0C3", icon: "BC" },
+  { name: "Pandora",    color: "#3668FF", icon: "PN" },
+  { name: "iHeart",     color: "#C6002B", icon: "IH" },
+  { name: "Audiomack",  color: "#FFA500", icon: "AU" },
 ];
 
-function PlatformOrbit() {
+interface Packet {
+  platformIdx: number;
+  progress: number; // 0 = center, 1 = platform
+  speed: number;
+  size: number;
+}
+
+function PlatformOrbit({ size = 600 }: { size?: number }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animRef = useRef<number>(0);
 
@@ -192,91 +203,325 @@ function PlatformOrbit() {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d")!;
-    const SIZE = 400;
-    canvas.width = SIZE;
-    canvas.height = SIZE;
+
+    const resize = () => {
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = size * dpr;
+      canvas.height = size * dpr;
+      canvas.style.width = `${size}px`;
+      canvas.style.height = `${size}px`;
+      ctx.scale(dpr, dpr);
+    };
+    resize();
+
     let t = 0;
 
+    // Orbit layout: 3 rings
+    const orbitConfig = [
+      { r: size * 0.22, count: 4,  speed:  0.006, startIdx: 0  },
+      { r: size * 0.34, count: 4,  speed: -0.004, startIdx: 4  },
+      { r: size * 0.44, count: 4,  speed:  0.003, startIdx: 8  },
+    ];
+
+    // Travelling data packets (center → platform)
+    const packets: Packet[] = [];
+    let packetTimer = 0;
+
+    // Burst events: platform flashes when a packet arrives
+    const bursts: { platformIdx: number; ttl: number }[] = [];
+
+    const spawnPacket = () => {
+      packets.push({
+        platformIdx: Math.floor(Math.random() * PLATFORMS.length),
+        progress: 0,
+        speed: 0.012 + Math.random() * 0.01,
+        size: 3 + Math.random() * 3,
+      });
+    };
+
+    const cx = size / 2, cy = size / 2;
+
+    // Precompute platform positions (dynamic, updated each frame)
+    const platformPos: { x: number; y: number; orbitR: number }[] = PLATFORMS.map(() => ({ x: 0, y: 0, orbitR: 0 }));
+
     const draw = () => {
-      t += 0.008;
-      ctx.clearRect(0, 0, SIZE, SIZE);
+      t += 1;
+      packetTimer += 1;
 
-      const cx = SIZE / 2, cy = SIZE / 2;
+      // Spawn a packet every ~40 frames
+      if (packetTimer >= 40) {
+        spawnPacket();
+        if (Math.random() < 0.4) spawnPacket(); // occasional double burst
+        packetTimer = 0;
+      }
 
-      // Orbit rings
-      [80, 130, 165].forEach((r, i) => {
+      ctx.clearRect(0, 0, size, size);
+
+      // ── Background fill ──
+      ctx.fillStyle = "rgba(3,5,16,0)";
+      ctx.fillRect(0, 0, size, size);
+
+      // ── Update platform positions ──
+      let pIdx = 0;
+      orbitConfig.forEach((ring) => {
+        for (let i = 0; i < ring.count; i++) {
+          const angle = (i / ring.count) * Math.PI * 2 + t * ring.speed;
+          platformPos[pIdx].x = cx + Math.cos(angle) * ring.r;
+          platformPos[pIdx].y = cy + Math.sin(angle) * ring.r;
+          platformPos[pIdx].orbitR = ring.r;
+          pIdx++;
+        }
+      });
+
+      // ── Orbit ring tracks ──
+      orbitConfig.forEach((ring, ri) => {
+        ctx.save();
         ctx.beginPath();
-        ctx.arc(cx, cy, r, 0, Math.PI * 2);
-        ctx.strokeStyle = `rgba(0,255,136,${0.06 - i * 0.01})`;
+        ctx.arc(cx, cy, ring.r, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(0,255,136,${0.07 - ri * 0.015})`;
         ctx.lineWidth = 1;
+        ctx.setLineDash([4, 8]);
+        ctx.stroke();
+        ctx.restore();
+      });
+
+      // ── Connection lines: platform → platform (same ring, subtle) ──
+      orbitConfig.forEach((ring, ri) => {
+        const start = ri === 0 ? 0 : ri === 1 ? 4 : 8;
+        for (let i = 0; i < ring.count; i++) {
+          const a = start + i;
+          const b = start + (i + 1) % ring.count;
+          ctx.beginPath();
+          ctx.moveTo(platformPos[a].x, platformPos[a].y);
+          ctx.lineTo(platformPos[b].x, platformPos[b].y);
+          ctx.strokeStyle = `${PLATFORMS[a].color}18`;
+          ctx.lineWidth = 0.5;
+          ctx.stroke();
+        }
+      });
+
+      // ── Connection lines: center → each platform ──
+      PLATFORMS.forEach((p, i) => {
+        const { x, y } = platformPos[i];
+        const grad = ctx.createLinearGradient(cx, cy, x, y);
+        grad.addColorStop(0, `${p.color}44`);
+        grad.addColorStop(1, `${p.color}08`);
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(x, y);
+        ctx.strokeStyle = grad;
+        ctx.lineWidth = 0.8;
         ctx.stroke();
       });
 
-      // Center core pulsing
-      const pulse = 1 + 0.15 * Math.sin(t * 3);
-      const coreGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, 28 * pulse);
-      coreGrad.addColorStop(0, "rgba(0,255,136,0.9)");
-      coreGrad.addColorStop(0.5, "rgba(0,255,136,0.3)");
-      coreGrad.addColorStop(1, "rgba(0,255,136,0)");
-      ctx.fillStyle = coreGrad;
+      // ── Data packets ──
+      for (let i = packets.length - 1; i >= 0; i--) {
+        const pkt = packets[i];
+        pkt.progress += pkt.speed;
+
+        if (pkt.progress >= 1) {
+          packets.splice(i, 1);
+          bursts.push({ platformIdx: pkt.platformIdx, ttl: 30 });
+          continue;
+        }
+
+        const target = platformPos[pkt.platformIdx];
+        const px = cx + (target.x - cx) * pkt.progress;
+        const py = cy + (target.y - cy) * pkt.progress;
+        const pColor = PLATFORMS[pkt.platformIdx].color;
+
+        // Glow trail
+        const trail = ctx.createRadialGradient(px, py, 0, px, py, pkt.size * 3);
+        trail.addColorStop(0, `${pColor}cc`);
+        trail.addColorStop(1, `${pColor}00`);
+        ctx.fillStyle = trail;
+        ctx.beginPath();
+        ctx.arc(px, py, pkt.size * 3, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Core dot
+        ctx.fillStyle = "#fff";
+        ctx.beginPath();
+        ctx.arc(px, py, pkt.size * 0.6, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // ── Burst rings on arrival ──
+      for (let i = bursts.length - 1; i >= 0; i--) {
+        const b = bursts[i];
+        b.ttl -= 1;
+        if (b.ttl <= 0) { bursts.splice(i, 1); continue; }
+
+        const progress = 1 - b.ttl / 30;
+        const { x, y } = platformPos[b.platformIdx];
+        const pColor = PLATFORMS[b.platformIdx].color;
+        const burstR = 14 + progress * 30;
+        const alpha = b.ttl / 30;
+
+        ctx.beginPath();
+        ctx.arc(x, y, burstR, 0, Math.PI * 2);
+        ctx.strokeStyle = `${pColor}${Math.floor(alpha * 255).toString(16).padStart(2, "0")}`;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+
+      // ── Platform nodes ──
+      PLATFORMS.forEach((p, i) => {
+        const { x, y } = platformPos[i];
+        const hasBurst = bursts.some((b) => b.platformIdx === i);
+        const nodeR = 14;
+
+        // Outer glow
+        const glowR = hasBurst ? 28 : 20;
+        const glow = ctx.createRadialGradient(x, y, 0, x, y, glowR);
+        glow.addColorStop(0, `${p.color}55`);
+        glow.addColorStop(1, `${p.color}00`);
+        ctx.fillStyle = glow;
+        ctx.beginPath();
+        ctx.arc(x, y, glowR, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Node circle
+        ctx.beginPath();
+        ctx.arc(x, y, nodeR, 0, Math.PI * 2);
+        ctx.fillStyle = hasBurst ? p.color : `${p.color}22`;
+        ctx.fill();
+        ctx.strokeStyle = `${p.color}aa`;
+        ctx.lineWidth = hasBurst ? 2 : 1;
+        ctx.stroke();
+
+        // Platform icon text
+        ctx.fillStyle = hasBurst ? "#000" : `${p.color}ee`;
+        ctx.font = `bold ${p.icon.length > 1 ? "7" : "9"}px monospace`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(p.icon, x, y);
+
+        // Label below
+        ctx.fillStyle = `${p.color}99`;
+        ctx.font = "7px monospace";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "top";
+        ctx.fillText(p.name.toUpperCase(), x, y + nodeR + 4);
+      });
+
+      // ── Center core ──
+      const pulse = 1 + 0.2 * Math.sin(t * 0.05);
+      const coreR = size * 0.055 * pulse;
+
+      // Outer corona
+      const corona = ctx.createRadialGradient(cx, cy, 0, cx, cy, coreR * 2.5);
+      corona.addColorStop(0, "rgba(0,255,136,0.15)");
+      corona.addColorStop(0.5, "rgba(0,255,136,0.05)");
+      corona.addColorStop(1, "rgba(0,255,136,0)");
+      ctx.fillStyle = corona;
       ctx.beginPath();
-      ctx.arc(cx, cy, 28 * pulse, 0, Math.PI * 2);
+      ctx.arc(cx, cy, coreR * 2.5, 0, Math.PI * 2);
       ctx.fill();
 
-      // Zap in center
+      // Inner core fill
+      const coreGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, coreR);
+      coreGrad.addColorStop(0, "rgba(0,255,136,1)");
+      coreGrad.addColorStop(0.6, "rgba(0,255,136,0.7)");
+      coreGrad.addColorStop(1, "rgba(0,200,100,0.3)");
+      ctx.fillStyle = coreGrad;
+      ctx.beginPath();
+      ctx.arc(cx, cy, coreR, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Core ring
+      ctx.beginPath();
+      ctx.arc(cx, cy, coreR, 0, Math.PI * 2);
+      ctx.strokeStyle = "rgba(0,255,136,0.9)";
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      // Core label
       ctx.fillStyle = "#000";
-      ctx.font = "bold 20px sans-serif";
+      ctx.font = `bold ${Math.floor(coreR * 0.55)}px sans-serif`;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillText("⚡", cx, cy);
 
-      // Platform nodes
-      PLATFORMS.forEach((p, i) => {
-        const orbit = i < 4 ? 130 : 165;
-        const offset = i < 4 ? 0 : Math.PI / 4;
-        const idx = i < 4 ? i : i - 4;
-        const angle = (idx / 4) * Math.PI * 2 + t * (i < 4 ? 1 : -0.7) + offset;
-        const px = cx + Math.cos(angle) * orbit;
-        const py = cy + Math.sin(angle) * orbit;
-
-        // Connection line to center
-        ctx.beginPath();
-        ctx.moveTo(cx, cy);
-        ctx.lineTo(px, py);
-        ctx.strokeStyle = `${p.color}22`;
-        ctx.lineWidth = 1;
-        ctx.stroke();
-
-        // Node glow
-        const nodeGrad = ctx.createRadialGradient(px, py, 0, px, py, 18);
-        nodeGrad.addColorStop(0, `${p.color}88`);
-        nodeGrad.addColorStop(1, `${p.color}00`);
-        ctx.fillStyle = nodeGrad;
-        ctx.beginPath();
-        ctx.arc(px, py, 18, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Node dot
-        ctx.fillStyle = p.color;
-        ctx.beginPath();
-        ctx.arc(px, py, 5, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Label
-        ctx.fillStyle = `${p.color}cc`;
-        ctx.font = "9px monospace";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText(p.name.toUpperCase(), px, py + 18);
-      });
-
       animRef.current = requestAnimationFrame(draw);
     };
+
     draw();
     return () => cancelAnimationFrame(animRef.current);
+  }, [size]);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      style={{ width: size, height: size }}
+      className="mx-auto"
+    />
+  );
+}
+
+// ─── Live Feed ────────────────────────────────────────────────────────────────
+
+const FEED_TEMPLATES: Array<(p: string, c: string) => ReactNode> = [
+  (p, c) => <><span style={{ color: c }}>{p}</span> · track deployed successfully</>,
+  (p, c) => <>distributing to <span style={{ color: c }}>{p}</span> · queued</>,
+  (p, c) => <><span style={{ color: "#00ff88" }}>✓</span> <span style={{ color: c }}>{p}</span> · live in 12s</>,
+  (p, c) => <>metadata sync → <span style={{ color: c }}>{p}</span></>,
+  (p, c) => <><span style={{ color: c }}>{p}</span> · audio fingerprint matched</>,
+  (p, c) => <>retry #1 → <span style={{ color: c }}>{p}</span> · resolved</>,
+];
+
+function LiveFeed() {
+  const [lines, setLines] = useState<{ id: number; el: ReactNode }[]>([]);
+  const idRef = useRef(0);
+
+  useEffect(() => {
+    const spawn = () => {
+      const p = PLATFORMS[Math.floor(Math.random() * PLATFORMS.length)];
+      const tmpl = FEED_TEMPLATES[Math.floor(Math.random() * FEED_TEMPLATES.length)];
+      const id = idRef.current++;
+      setLines((prev) => [{ id, el: tmpl(p.name, p.color) }, ...prev].slice(0, 5));
+    };
+    spawn();
+    const iv = setInterval(spawn, 1800);
+    return () => clearInterval(iv);
   }, []);
 
-  return <canvas ref={canvasRef} width={400} height={400} className="mx-auto opacity-90" />;
+  return (
+    <div
+      className="mx-auto mt-2 rounded-lg overflow-hidden"
+      style={{
+        maxWidth: 520,
+        background: "rgba(0,0,0,0.5)",
+        border: "1px solid rgba(0,255,136,0.1)",
+        fontFamily: "monospace",
+      }}
+    >
+      {/* Terminal top bar */}
+      <div className="flex items-center gap-2 px-4 py-2" style={{ borderBottom: "1px solid rgba(0,255,136,0.08)", background: "rgba(0,255,136,0.03)" }}>
+        <span className="w-2.5 h-2.5 rounded-full bg-red-500/70" />
+        <span className="w-2.5 h-2.5 rounded-full bg-yellow-500/70" />
+        <span className="w-2.5 h-2.5 rounded-full bg-green-500/70" />
+        <span className="ml-2 text-xs text-gray-500 tracking-widest">distrobuzz · distribution log · live</span>
+        <span className="ml-auto flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#00ff88] animate-pulse" />
+          <span className="text-[#00ff88] text-xs">LIVE</span>
+        </span>
+      </div>
+      {/* Log lines */}
+      <div className="px-4 py-3 space-y-1.5" style={{ minHeight: 130 }}>
+        {lines.map((line, idx) => (
+          <div
+            key={line.id}
+            className="text-xs text-gray-400 transition-all duration-500"
+            style={{ opacity: 1 - idx * 0.15 }}
+          >
+            <span className="text-gray-600 select-none">{String(new Date().getSeconds()).padStart(2, "0")}:{String(new Date().getMilliseconds()).padStart(3, "0")} › </span>
+            {line.el}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 // ─── Scroll reveal hook ───────────────────────────────────────────────────────
@@ -431,45 +676,67 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ORBIT + PITCH */}
+      {/* ORBIT — full-screen showcase */}
       <section
         ref={orbitRef}
         className={`relative z-10 py-20 px-6 transition-all duration-1000 ${orbitVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}
+        style={{ borderTop: "1px solid rgba(0,255,136,0.06)", borderBottom: "1px solid rgba(0,255,136,0.06)" }}
       >
-        <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-16 items-center">
-          <div>
-            <PlatformOrbit />
-          </div>
-          <div className="space-y-8">
-            <h2 className="font-black leading-none" style={{ fontSize: "clamp(2rem, 5vw, 3.5rem)", letterSpacing: "-0.03em" }}>
-              One upload.<br />
-              <span style={{ color: "#00ff88" }}>Infinite reach.</span>
+        {/* Section label */}
+        <div className="text-center mb-4">
+          <span
+            className="inline-block px-4 py-1 text-xs font-mono tracking-widest uppercase rounded-full"
+            style={{ border: "1px solid rgba(0,255,136,0.2)", color: "#00ff88", background: "rgba(0,255,136,0.04)" }}
+          >
+            Live Distribution Network
+          </span>
+        </div>
+
+        <div className="max-w-7xl mx-auto">
+          {/* Heading */}
+          <div className="text-center mb-2">
+            <h2 className="font-black" style={{ fontSize: "clamp(2rem, 5vw, 3.5rem)", letterSpacing: "-0.03em" }}>
+              Watch your music travel.
             </h2>
-            <p className="text-gray-400 leading-relaxed text-lg">
-              The moment your track lands on SoundCloud, our engine propagates it simultaneously to Spotify, Apple Music, YouTube Music, TikTok, Amazon, Deezer, Tidal, and 40+ more. Realtime. Zero babysitting.
-            </p>
-            <div className="space-y-4">
+            <p className="text-gray-500 mt-2 text-sm">Real-time propagation — every upload, every platform, simultaneously.</p>
+          </div>
+
+          {/* Orbit canvas — big */}
+          <div className="flex justify-center items-center py-4">
+            <div className="relative">
+              {/* Ambient glow behind canvas */}
+              <div
+                className="absolute inset-0 rounded-full pointer-events-none"
+                style={{
+                  background: "radial-gradient(ellipse at center, rgba(0,255,136,0.06) 0%, transparent 70%)",
+                  transform: "scale(1.3)",
+                }}
+              />
+              <PlatformOrbit size={580} />
+            </div>
+          </div>
+
+          {/* Live event feed below orbit */}
+          <LiveFeed />
+
+          {/* CTA row */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-8">
+            <div className="flex gap-6 text-sm text-gray-500 font-mono">
               {[
-                { title: "Intelligent Retry", desc: "Failures auto-retry with exponential backoff. Nothing falls through." },
-                { title: "Live Status Map", desc: "See every platform, every track, every status. Real-time." },
-                { title: "AI Metadata", desc: "Auto-optimize tags, descriptions, and genres for algorithmic reach." },
-              ].map((f, i) => (
-                <div key={i} className="flex gap-4">
-                  <div
-                    className="w-1 rounded-full flex-shrink-0"
-                    style={{ background: i === 0 ? "#00ff88" : i === 1 ? "#00ffff" : "#ffbb00" }}
-                  />
-                  <div>
-                    <div className="font-bold text-white">{f.title}</div>
-                    <div className="text-gray-500 text-sm">{f.desc}</div>
-                  </div>
+                { label: "Platforms", val: "50+", color: "#00ff88" },
+                { label: "Avg Deploy", val: "<2min", color: "#00ffff" },
+                { label: "Uptime", val: "99.9%", color: "#ffbb00" },
+              ].map((s, i) => (
+                <div key={i} className="text-center">
+                  <div className="font-black text-lg" style={{ color: s.color }}>{s.val}</div>
+                  <div className="text-xs tracking-widest uppercase">{s.label}</div>
                 </div>
               ))}
             </div>
             <button
               onClick={() => setLocation("/signup")}
-              className="font-bold px-6 py-3 rounded-lg text-black transition-all hover:scale-105"
-              style={{ background: "#00ff88", boxShadow: "0 0 20px rgba(0,255,136,0.3)" }}
+              className="font-bold px-8 py-3 rounded-lg text-black transition-all hover:scale-105"
+              style={{ background: "#00ff88", boxShadow: "0 0 24px rgba(0,255,136,0.35)" }}
             >
               Start Distributing Free
             </button>
