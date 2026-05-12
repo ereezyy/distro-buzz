@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
-import type { User as SupabaseUser, Session } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
+
+type SupabaseUser = NonNullable<Awaited<ReturnType<typeof supabase.auth.getUser>>["data"]["user"]>;
 
 interface User {
   id: string;

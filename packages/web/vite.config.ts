@@ -16,10 +16,15 @@ export default defineConfig({
       "node_modules",
     ],
   },
-  optimizeDeps: {
-    include: ["@supabase/supabase-js"],
-  },
   build: {
     outDir: "dist",
+    rollupOptions: {
+      external: ["@supabase/supabase-js"],
+      output: {
+        globals: {
+          "@supabase/supabase-js": "supabase",
+        },
+      },
+    },
   },
 });
